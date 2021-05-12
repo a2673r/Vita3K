@@ -671,7 +671,7 @@ EXPORT(int, sceGxmBeginCommandList, SceGxmContext *deferredContext) {
     return 0;
 }
 
-EXPORT(int, sceGxmBeginScene, SceGxmContext *context, uint32_t flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *depthStencil) {
+EXPORT(int, sceGxmBeginScene, SceGxmContext *context, SceGxmSceneFlags flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *depthStencil) {
     if (!context) {
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
     }
@@ -734,7 +734,7 @@ EXPORT(int, sceGxmBeginScene, SceGxmContext *context, uint32_t flags, const SceG
     return 0;
 }
 
-EXPORT(int, sceGxmBeginSceneEx, SceGxmContext *immediateContext, uint32_t flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *loadDepthStencilSurface, const SceGxmDepthStencilSurface *storeDepthStencilSurface) {
+EXPORT(int, sceGxmBeginSceneEx, SceGxmContext *immediateContext, SceGxmSceneFlags flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *loadDepthStencilSurface, const SceGxmDepthStencilSurface *storeDepthStencilSurface) {
     if (!immediateContext) {
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
     }
@@ -901,7 +901,9 @@ EXPORT(int, sceGxmColorSurfaceSetGammaMode, SceGxmColorSurface *surface, SceGxmC
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
     }
 
-    return UNIMPLEMENTED();
+    surface->backgroundTex.gamma_mode = gammaMode;
+
+    return 0;
 }
 
 EXPORT(void, sceGxmColorSurfaceSetScaleMode, SceGxmColorSurface *surface, SceGxmColorSurfaceScaleMode scaleMode) {
@@ -1127,11 +1129,14 @@ EXPORT(int, sceGxmDestroyContext, Ptr<SceGxmContext> context) {
     return 0;
 }
 
-EXPORT(int, sceGxmDestroyDeferredContext, SceGxmContext *deferredContext) {
+EXPORT(int, sceGxmDestroyDeferredContext, Ptr<SceGxmContext> deferredContext) {
     if (!deferredContext) {
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
     }
-    return UNIMPLEMENTED();
+
+    free(host.mem, deferredContext);
+
+    return 0;
 }
 
 EXPORT(int, sceGxmDestroyRenderTarget, Ptr<SceGxmRenderTarget> renderTarget) {
@@ -2634,6 +2639,7 @@ EXPORT(void, sceGxmSetBackStencilRef, SceGxmContext *context, uint8_t sref) {
 }
 
 EXPORT(void, sceGxmSetBackVisibilityTestEnable, SceGxmContext *context, SceGxmVisibilityTestMode enable) {
+    //LOG_DEBUG("Back, State: {}", enable);
     UNIMPLEMENTED();
 }
 
@@ -2871,10 +2877,12 @@ EXPORT(void, sceGxmSetFrontStencilRef, SceGxmContext *context, uint8_t sref) {
 }
 
 EXPORT(void, sceGxmSetFrontVisibilityTestEnable, SceGxmContext *context, SceGxmVisibilityTestMode enable) {
+    //LOG_DEBUG("Front, State: {}", enable);
     UNIMPLEMENTED();
 }
 
 EXPORT(void, sceGxmSetFrontVisibilityTestIndex, SceGxmContext *context, uint32_t index) {
+    //LOG_DEBUG("Front, index: {}", index);
     UNIMPLEMENTED();
 }
 
@@ -4086,6 +4094,12 @@ EXPORT(int, sceGxmTransferCopy, uint32_t width, uint32_t height, uint32_t colorK
     SceGxmTransferFormat srcFormat, SceGxmTransferType srcType, Ptr<void> srcAddress, uint32_t srcX, uint32_t srcY, int32_t srcStride,
     SceGxmTransferFormat destFormat, SceGxmTransferType destType, Ptr<void> destAddress, uint32_t destX, uint32_t destY, int32_t destStride,
     Ptr<SceGxmSyncObject> syncObject, SceGxmTransferFlags syncFlags, const SceGxmNotification *notification) {
+
+    LOG_DEBUG("colorKeyValue: {}, colorKeyMask: {}, colorKeyMode: {}", colorKeyValue, colorKeyMask, colorKeyMode);
+    LOG_DEBUG("srcFormat: {}, srcType: {}, srcStride: {}", srcFormat, srcType, srcStride);
+    LOG_DEBUG("destFormat: {}, destType: {}, destStride: {}, syncFlags: {}", destFormat, destType, destStride, syncFlags);
+    LOG_DEBUG("width: {}, height: {}, srcX: {}, srcY: {}, destX: {}, desty: {}", width, height, srcX, srcX, destX, destY, syncFlags);
+
     if (!srcAddress || !destAddress)
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
 
@@ -4131,10 +4145,13 @@ EXPORT(int, sceGxmTransferCopy, uint32_t width, uint32_t height, uint32_t colorK
 
     renderer::transfer_copy(*host.renderer, colorKeyValue, colorKeyMask, colorKeyMode, images, srcType, destType);
 
-    if (notification)
+    if (notification) {
+        LOG_DEBUG("Notification");
         renderer::send_single_command(*host.renderer, nullptr, renderer::CommandOpcode::SignalNotification, false, *notification, true);
+    }
 
     if (syncObject) {
+        LOG_DEBUG("syncObject");
         SceGxmSyncObject *sync = syncObject.get(host.mem);
         renderer::send_single_command(*host.renderer, nullptr, renderer::CommandOpcode::SignalSyncObject, false,
             syncObject, cmd_timestamp);
@@ -4147,6 +4164,9 @@ EXPORT(int, sceGxmTransferDownscale, SceGxmTransferFormat srcFormat, Ptr<void> s
     uint32_t srcX, uint32_t srcY, uint32_t srcWidth, uint32_t srcHeight, int32_t srcStride,
     SceGxmTransferFormat destFormat, Ptr<void> destAddress, uint32_t destX, uint32_t destY, int32_t destStride,
     Ptr<SceGxmSyncObject> syncObject, SceGxmTransferFlags syncFlags, const SceGxmNotification *notification) {
+
+    LOG_DEBUG("srcFormat: {}, srcStride: {}, destStride: {}\ndestFormat: {}, syncFlags: {}", srcFormat, srcStride, destStride, destFormat, syncFlags);
+    LOG_DEBUG("srcWidth: {}, srcHeight: {}, srcX: {}, srcY: {}, destX: {}, desty: {}", srcWidth, srcHeight, srcX, srcX, destX, destY, syncFlags);
     if (!srcAddress || !destAddress)
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
 
@@ -4176,10 +4196,13 @@ EXPORT(int, sceGxmTransferDownscale, SceGxmTransferFormat srcFormat, Ptr<void> s
 
     renderer::transfer_downscale(*host.renderer, src, dest);
 
-    if (notification)
+    if (notification) {
+        LOG_DEBUG("Notification");
         renderer::send_single_command(*host.renderer, nullptr, renderer::CommandOpcode::SignalNotification, false, *notification, true);
+    }
 
     if (syncObject) {
+        LOG_DEBUG("syncObject");
         SceGxmSyncObject *sync = syncObject.get(host.mem);
         renderer::send_single_command(*host.renderer, nullptr, renderer::CommandOpcode::SignalSyncObject, false,
             syncObject, cmd_timestamp);
@@ -4193,6 +4216,7 @@ EXPORT(int, sceGxmTransferFill, uint32_t fillColor, SceGxmTransferFormat destFor
     Ptr<SceGxmSyncObject> syncObject, SceGxmTransferFlags syncFlags, const SceGxmNotification *notification) {
     if (!destAddress)
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
+    LOG_DEBUG("fillColor: {}, destFormat: {}, destStride: {}\ndestWidth: {}, destHeight: {}, destX: {}, destY: {}, synclfag: {}", fillColor, destFormat, destStride, destWidth, destHeight, destX, destY, syncFlags);
 
     uint32_t cmd_timestamp;
     if (syncObject) {
@@ -4212,10 +4236,13 @@ EXPORT(int, sceGxmTransferFill, uint32_t fillColor, SceGxmTransferFormat destFor
     dest->stride = destStride;
     renderer::transfer_fill(*host.renderer, fillColor, dest);
 
-    if (notification)
+    if (notification) {
+        LOG_DEBUG("Notification");
         renderer::send_single_command(*host.renderer, nullptr, renderer::CommandOpcode::SignalNotification, false, *notification, true);
+    }
 
     if (syncObject) {
+        LOG_DEBUG("syncObject");
         SceGxmSyncObject *sync = syncObject.get(host.mem);
         renderer::send_single_command(*host.renderer, nullptr, renderer::CommandOpcode::SignalSyncObject, false,
             syncObject, cmd_timestamp);

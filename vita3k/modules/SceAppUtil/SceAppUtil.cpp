@@ -256,19 +256,19 @@ EXPORT(int, sceAppUtilSaveDataMount) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppUtilSaveDataSlotCreate, unsigned int slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotCreate, SceUInt32 slotId, const SceAppUtilSaveDataSlotParam *param, const SceAppUtilMountPoint *mountPoint) {
     const auto fd = open_file(host.io, construct_slotparam_path(slotId).c_str(), SCE_O_WRONLY | SCE_O_CREAT, host.pref_path, export_name);
     write_file(fd, param, sizeof(SceAppUtilSaveDataSlotParam), host.io, export_name);
     close_file(host.io, fd, export_name);
     return 0;
 }
 
-EXPORT(int, sceAppUtilSaveDataSlotDelete, unsigned int slotId, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotDelete, SceUInt32 slotId, SceAppUtilMountPoint *mountPoint) {
     remove_file(host.io, construct_slotparam_path(slotId).c_str(), host.pref_path, export_name);
     return 0;
 }
 
-EXPORT(int, sceAppUtilSaveDataSlotGetParam, unsigned int slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotGetParam, SceUInt32 slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
     const auto fd = open_file(host.io, construct_slotparam_path(slotId).c_str(), SCE_O_RDONLY, host.pref_path, export_name);
     if (fd < 0)
         return RET_ERROR(SCE_APPUTIL_ERROR_SAVEDATA_SLOT_NOT_FOUND);
@@ -330,7 +330,7 @@ EXPORT(SceInt32, sceAppUtilSaveDataSlotSearch, SceAppUtilWorkBuffer *workBuf, co
     return 0;
 }
 
-EXPORT(SceInt32, sceAppUtilSaveDataSlotSetParam, SceAppUtilSaveDataSlotId slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotSetParam, SceAppUtilSaveDataSlotId slotId, const SceAppUtilSaveDataSlotParam *param, const SceAppUtilMountPoint *mountPoint) {
     const auto fd = open_file(host.io, construct_slotparam_path(slotId).c_str(), SCE_O_WRONLY, host.pref_path, export_name);
     if (fd < 0)
         return RET_ERROR(SCE_APPUTIL_ERROR_SAVEDATA_SLOT_NOT_FOUND);

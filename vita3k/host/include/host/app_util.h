@@ -33,6 +33,17 @@ typedef SceUInt32 SceAppUtilBgdlStatusType;
 #define SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE (64 * 1024)
 #define SCE_SYSTEM_PARAM_USERNAME_MAXSIZE 17
 
+struct SceAppUtilInitParam {
+    SceSize workBufSize;
+    SceChar8 reserved[60];
+};
+
+struct SceAppUtilBootParam {
+    SceAppUtilBootAttribute attr;
+    SceUInt32 appVersion;
+    SceChar8 reserved[32];
+};
+
 struct SceAppUtilDrmAddcontId {
     SceChar8 data[SCE_APPUTIL_NP_DRM_ADDCONT_ID_SIZE];
     SceChar8 padding[3];

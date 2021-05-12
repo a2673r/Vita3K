@@ -504,7 +504,8 @@ static std::map<SceGxmColorFormat, std::pair<GLenum, GLenum>> GXM_COLOR_FORMAT_T
     { SCE_GXM_COLOR_FORMAT_F32F32_GR, { GL_RG, GL_FLOAT } },
     { SCE_GXM_COLOR_FORMAT_F11F11F10_RGB, { GL_RGB, GL_UNSIGNED_INT_10F_11F_11F_REV } },
     { SCE_GXM_COLOR_FORMAT_SE5M9M9M9_BGR, { GL_RGB, GL_HALF_FLOAT } },
-    { SCE_GXM_COLOR_FORMAT_SE5M9M9M9_RGB, { GL_BGR, GL_HALF_FLOAT } }
+    { SCE_GXM_COLOR_FORMAT_SE5M9M9M9_RGB, { GL_BGR, GL_HALF_FLOAT } },
+    { SCE_GXM_COLOR_FORMAT_U16_R, { GL_RED, GL_UNSIGNED_SHORT } }
 };
 
 static bool format_need_temp_storage(const GLState &state, SceGxmColorSurface &surface, std::vector<std::uint8_t> &storage, const std::uint32_t width, const std::uint32_t height) {
@@ -689,7 +690,7 @@ void get_surface_data(GLState &renderer, GLContext &context, uint32_t *pixels, S
     if (format_gl == GXM_COLOR_FORMAT_TO_GL_FORMAT.end()) {
         LOG_ERROR("Color format not implemented: {}, report this to developer", format);
         return;
-    }
+     }
 
     std::uint8_t *temp_store = reinterpret_cast<std::uint8_t *>(pixels);
     std::vector<std::uint8_t> storage_v;

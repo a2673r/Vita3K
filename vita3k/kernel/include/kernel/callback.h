@@ -113,6 +113,8 @@ struct Callback {
      */
     void execute(KernelState &kernel, std::function<void()> deleter);
 
+    uint32_t process_callbacks(KernelState &kernel, SceUID thread_id);
+
 private:
     void reset();
     bool is_notified() const;

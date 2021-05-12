@@ -339,6 +339,7 @@ EXPORT(int, _sceKernelGetThreadContextForVM, SceUID threadId, Ptr<SceKernelThrea
         infoCpu->st = 100000; // Todo
         infoCpu->teehbr = 100000; // Todo
         infoCpu->tpidrurw = read_tpidruro(*thread->cpu);
+        //LOG_DEBUG("cpsr: {}, tpidrurw: {}", infoCpu->cpsr, infoCpu->tpidrurw);
     }
 
     SceKernelThreadVfpRegisterInfo *infoVfp = pVfpRegisterInfo.get(host.mem);
@@ -497,6 +498,7 @@ EXPORT(int, _sceKernelSetThreadContextForVM, SceUID threadId, Ptr<SceKernelThrea
     const ThreadStatePtr thread = lock_and_find(threadId, host.kernel.threads, host.kernel.mutex);
     if (!thread)
         return RET_ERROR(SCE_KERNEL_ERROR_UNKNOWN_THREAD_ID);
+    LOG_DEBUG("thread id: {}, name: {}", threadId, thread->name);
 
     SceKernelThreadCpuRegisterInfo *infoCpu = pCpuRegisterInfo.get(host.mem);
     if (infoCpu) {
@@ -814,6 +816,7 @@ EXPORT(SceUID, sceKernelCreateCallback, char *name, SceUInt32 attr, Ptr<SceKerne
     SceUID cb_uid = host.kernel.get_next_uid();
     host.kernel.callbacks.emplace(cb_uid, cb);
     thread->callbacks.push_back(cb);
+    LOG_DEBUG("Create callbcack: thread id: {}, cb id: {}, name: {}", thread_id, cb_uid, name);
     return cb_uid;
 }
 
@@ -984,7 +987,7 @@ EXPORT(SceInt32, sceKernelNotifyCallback, SceUID callbackId, SceInt32 notifyArg)
     const CallbackPtr cb = lock_and_find(callbackId, host.kernel.callbacks, host.kernel.mutex);
     if (!cb)
         return RET_ERROR(SCE_KERNEL_ERROR_UNKNOWN_CALLBACK_ID);
-
+    LOG_DEBUG("cb id: {}, arg: {}", callbackId, notifyArg);
     cb->direct_notify(notifyArg);
 
     return SCE_KERNEL_OK;

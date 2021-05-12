@@ -173,7 +173,7 @@ EXPORT(int, sceAvcdecDecode, SceAvcdecCtrl *decoder, const SceAvcdecAu *au, SceA
     // This is quite long...
     SceAvcdecPicture *pPicture = picture->pPicture.get(host.mem)[0].get(host.mem);
     uint8_t *output = pPicture->frame.pPicture[0].cast<uint8_t>().get(host.mem);
-
+    
     // TODO: decoding can be done async I think
     decoder_info->configure(&options);
     const auto send = decoder_info->send(reinterpret_cast<uint8_t *>(au->es.pBuf.get(host.mem)), au->es.size);

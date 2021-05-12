@@ -53,8 +53,10 @@ struct VoicePreset {
     SceUInt32 bypass_flags_nb;
 };
 
+typedef SceUInt32 SceNgsParamsID;
+
 struct ParametersDescriptor {
-    SceUInt32 id;
+    SceNgsParamsID id;
     SceUInt32 size;
 };
 

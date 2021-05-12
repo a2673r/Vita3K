@@ -136,7 +136,7 @@ GLenum translate_format(SceGxmColorBaseFormat base_format) {
 GLenum translate_type(SceGxmColorBaseFormat base_format) {
     switch (base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8U8:
-        return GL_UNSIGNED_BYTE;
+        return GL_UNSIGNED_INT_8_8_8_8_REV;
 
     case SCE_GXM_COLOR_BASE_FORMAT_S8S8S8S8:
         return GL_BYTE;

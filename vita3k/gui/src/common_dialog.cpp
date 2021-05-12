@@ -107,7 +107,19 @@ static void draw_message_dialog(DialogState &common_dialog, float FONT_SCALE, Im
         }
         ImGui::PopStyleVar();
         ImGui::EndGroup();
-    }
+    } /*else {
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.f * SCALE.x);
+        const auto buttons_width = common_dialog.savedata.btn_num == 2 ? BUTTON_SIZE.x : BUTTON_SIZE.x / 2;
+        ImGui::SetCursorPos(ImVec2(WINDOW_SIZE.x / 2 - buttons_width, WINDOW_SIZE.y - 50 * SCALE.y));
+        ImGui::BeginGroup();
+        if (ImGui::Button("OK", BUTTON_SIZE)) {
+            common_dialog.savedata.button_id = SCE_SAVEDATA_DIALOG_BUTTON_ID_OK;
+            common_dialog.result = SCE_COMMON_DIALOG_RESULT_OK;
+            common_dialog.status = SCE_COMMON_DIALOG_STATUS_FINISHED;
+        }
+        ImGui::PopStyleVar();
+        ImGui::EndGroup();
+    }*/
     ImGui::End();
     ImGui::PopStyleColor();
 }
@@ -399,12 +411,26 @@ static void draw_savedata_dialog(GuiState &gui, HostState &host, float FONT_SCAL
                     host.common_dialog.savedata.button_id = host.common_dialog.savedata.btn_val[i];
                     host.common_dialog.result = SCE_COMMON_DIALOG_RESULT_OK;
                     host.common_dialog.substatus = SCE_COMMON_DIALOG_STATUS_FINISHED;
+                    //host.common_dialog.status = SCE_COMMON_DIALOG_STATUS_FINISHED;
                 }
                 ImGui::SameLine();
             }
             ImGui::PopStyleVar();
             ImGui::EndGroup();
-        }
+        } /*else {
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.f * SCALE.x);
+            const auto buttons_width = host.common_dialog.savedata.btn_num == 2 ? BUTTON_SIZE.x : BUTTON_SIZE.x / 2;
+            ImGui::SetCursorPos(ImVec2(WINDOW_SIZE.x / 2 - buttons_width, WINDOW_SIZE.y - 50 * SCALE.y));
+            ImGui::BeginGroup();
+            if (ImGui::Button("OK", BUTTON_SIZE)) {
+                host.common_dialog.savedata.button_id = SCE_SAVEDATA_DIALOG_BUTTON_ID_OK;
+                host.common_dialog.result = SCE_COMMON_DIALOG_RESULT_OK;
+                host.common_dialog.substatus = SCE_COMMON_DIALOG_STATUS_FINISHED;
+                host.common_dialog.status = SCE_COMMON_DIALOG_STATUS_FINISHED;
+            }
+            ImGui::PopStyleVar();
+            ImGui::EndGroup();
+        }*/
         ImGui::End();
         ImGui::PopStyleColor();
         break;

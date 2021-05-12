@@ -1421,8 +1421,23 @@ EXPORT(int, sceKernelTryReceiveMsgPipeVector) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceKernelTrySendMsgPipe) {
-    return UNIMPLEMENTED();
+EXPORT(SceInt32, sceKernelTrySendMsgPipe, SceUID msgPipeId, char *pSendBuf, SceSize sendSize, SceUInt32 waitMode, SceSize *pResult) {
+    if (waitMode & SCE_KERNEL_MSG_PIPE_MODE_DONT_WAIT)
+        return RET_ERROR(SCE_KERNEL_ERROR_INVALID_ARGUMENT);
+
+    const MsgPipePtr msgpipe = lock_and_find(msgPipeId, host.kernel.msgpipes, host.kernel.mutex);
+    if (!msgpipe) {
+        return RET_ERROR(SCE_KERNEL_ERROR_UNKNOWN_MSG_PIPE_ID);
+    }
+
+    std::unique_lock pipeLock(msgpipe->mutex);
+    if ((waitMode & SCE_KERNEL_MSG_PIPE_MODE_FULL) && msgpipe->data_buffer.Full() && (msgpipe->data_buffer.Free() < (size_t)sendSize))
+        return SCE_KERNEL_ERROR_MSG_PIPE_FULL;
+
+    // Either ASAP and not full, or FULL and enough size
+    *pResult = (SceInt32)msgpipe->data_buffer.Insert(pSendBuf, sendSize);    
+
+    return SCE_KERNEL_OK;
 }
 
 EXPORT(int, sceKernelTrySendMsgPipeVector) {
