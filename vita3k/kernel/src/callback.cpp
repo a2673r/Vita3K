@@ -38,6 +38,8 @@ uint32_t process_callbacks(KernelState &kernel, SceUID thread_id) {
     return num_callbacks_processed;
 }
 
+#include <util/log.h>
+
 void Callback::notify(SceUID notifier_id, SceInt32 notify_arg) {
     std::lock_guard lock(this->_mutex);
     this->notifier_id = notifier_id;
