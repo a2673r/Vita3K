@@ -312,6 +312,9 @@ EXPORT(int, sceMsgDialogInit, const Ptr<SceMsgDialogParam> param) {
             emuenv.common_dialog.msg.btn[2] = bp->msg3.get(emuenv.mem);
             emuenv.common_dialog.msg.btn_val[2] = SCE_MSG_DIALOG_BUTTON_ID_RETRY;
             break;
+        default:
+            LOG_ERROR("Attempt to init msg dialog with unknown button mode: {}", up->buttonType);
+            break;
         }
         break;
     case SCE_MSG_DIALOG_MODE_SYSTEM_MSG:
@@ -375,6 +378,18 @@ EXPORT(int, sceMsgDialogInit, const Ptr<SceMsgDialogParam> param) {
         case SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_EMPTY_STORE:
             emuenv.common_dialog.msg.message = "No content is available yet.";
             emuenv.common_dialog.msg.btn_num = 0;
+            break;
+        case SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_PSN_AGE_RESTRICTION:
+            emuenv.common_dialog.msg.message = "You cannot use PlayStation™Network features in this application due to age restrictions.";
+            emuenv.common_dialog.msg.btn[0] = "Ok";
+            emuenv.common_dialog.msg.btn_val[0] = SCE_MSG_DIALOG_BUTTON_ID_OK;
+            emuenv.common_dialog.msg.btn_num = 1;
+            break;
+        case SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_PSN_CHAT_RESTRICTION:
+            emuenv.common_dialog.msg.message = "Use of this application's chat and messaging features is not allowed for your account.";
+            emuenv.common_dialog.msg.btn[0] = "Ok";
+            emuenv.common_dialog.msg.btn_val[0] = SCE_MSG_DIALOG_BUTTON_ID_OK;
+            emuenv.common_dialog.msg.btn_num = 1;
             break;
         case SCE_MSG_DIALOG_SYSMSG_TYPE_INVALID:
         default:
@@ -474,6 +489,12 @@ EXPORT(int, sceMsgDialogTerm) {
 
 EXPORT(int, sceNetCheckDialogAbort) {
     TRACY_FUNC(sceNetCheckDialogAbort);
+    //if (emuenv.common_dialog.type != MESSAGE_DIALOG) {
+    //    return RET_ERROR(SCE_COMMON_DIALOG_ERROR_NOT_SUPPORTED);
+    //}
+    //emuenv.common_dialog.status = SCE_COMMON_DIALOG_STATUS_FINISHED;
+    //emuenv.common_dialog.result = SCE_COMMON_DIALOG_RESULT_ABORTED;
+
     return UNIMPLEMENTED();
 }
 
@@ -482,15 +503,11 @@ EXPORT(int, sceNetCheckDialogGetPS3ConnectInfo) {
     return UNIMPLEMENTED();
 }
 
-typedef struct SceNetCheckDialogResult {
-    SceInt32 result;
-    SceBool psnModeSucceeded;
-    SceUInt8 reserved[124];
-} SceNetCheckDialogResult;
-
 EXPORT(int, sceNetCheckDialogGetResult, SceNetCheckDialogResult *result) {
     TRACY_FUNC(sceNetCheckDialogGetResult, result);
-    result->result = 0;
+    result->result = 1;
+    result->psnModeSucceeded = false;
+
     return STUBBED("result->result = 0");
 }
 
@@ -503,8 +520,9 @@ EXPORT(SceCommonDialogStatus, sceNetCheckDialogGetStatus) {
     return emuenv.common_dialog.status;
 }
 
-EXPORT(int, sceNetCheckDialogInit) {
+EXPORT(int, sceNetCheckDialogInit, SceNetCheckDialogParam *param) {
     TRACY_FUNC(sceNetCheckDialogInit);
+    LOG_DEBUG("param mode: {}", param->mode);
     emuenv.common_dialog.type = NETCHECK_DIALOG;
     emuenv.common_dialog.status = SCE_COMMON_DIALOG_STATUS_FINISHED;
     return UNIMPLEMENTED();
@@ -512,8 +530,12 @@ EXPORT(int, sceNetCheckDialogInit) {
 
 EXPORT(int, sceNetCheckDialogTerm) {
     TRACY_FUNC(sceNetCheckDialogTerm);
+    //if (emuenv.common_dialog.type != MESSAGE_DIALOG) {
+    //  return RET_ERROR(SCE_COMMON_DIALOG_ERROR_NOT_SUPPORTED);
+    //}
     emuenv.common_dialog.status = SCE_COMMON_DIALOG_STATUS_NONE;
     emuenv.common_dialog.type = NO_DIALOG;
+
     return UNIMPLEMENTED();
 }
 
@@ -1540,6 +1562,10 @@ EXPORT(int, sceVideoImportDialogTerm) {
     return UNIMPLEMENTED();
 }
 
+EXPORT(int, SceCommonDialog_B7D4C911) {
+    return UNIMPLEMENTED();
+}
+
 BRIDGE_IMPL(sceCameraImportDialogAbort)
 BRIDGE_IMPL(sceCameraImportDialogGetResult)
 BRIDGE_IMPL(sceCameraImportDialogGetStatus)
@@ -1659,3 +1685,5 @@ BRIDGE_IMPL(sceVideoImportDialogGetResult)
 BRIDGE_IMPL(sceVideoImportDialogGetStatus)
 BRIDGE_IMPL(sceVideoImportDialogInit)
 BRIDGE_IMPL(sceVideoImportDialogTerm)
+
+BRIDGE_IMPL(SceCommonDialog_B7D4C911)

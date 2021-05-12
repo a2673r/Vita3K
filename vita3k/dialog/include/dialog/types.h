@@ -182,7 +182,9 @@ enum SceMsgDialogSystemMessageType {
     SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_MIC_DISABLED = 100,
     SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_WIFI_REQUIRED_OPERATION = 101,
     SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_WIFI_REQUIRED_APPLICATION = 102,
-    SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_EMPTY_STORE = 103
+    SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_EMPTY_STORE = 103,
+    SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_PSN_AGE_RESTRICTION = 104,
+    SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_PSN_CHAT_RESTRICTION = 105
 };
 
 enum SceMsgDialogProgressBarTarget {
@@ -407,6 +409,53 @@ struct SceSaveDataDialogSlotInfo {
     SceUInt32 isExist;
     SceAppUtilSaveDataSlotParam *slotParam;
     SceChar8 reserved[32];
+};
+
+struct SceNetCheckDialogResult {
+    SceInt32 result;
+    SceBool psnModeSucceeded;
+    SceUInt8 reserved[124];
+};
+
+enum SceNetCheckDialogMode {
+    SCE_NETCHECK_DIALOG_MODE_INVALID,
+    SCE_NETCHECK_DIALOG_MODE_ADHOC_CONN,
+    SCE_NETCHECK_DIALOG_MODE_PSN,
+    SCE_NETCHECK_DIALOG_MODE_PSN_ONLINE,
+    SCE_NETCHECK_DIALOG_MODE_PS3_CONNECT,
+    SCE_NETCHECK_DIALOG_MODE_PSP_ADHOC_CONN,
+    SCE_NETCHECK_DIALOG_MODE_PSP_ADHOC_CREATE,
+    SCE_NETCHECK_DIALOG_MODE_PSP_ADHOC_JOIN
+};
+
+#define SCE_NETCHECK_DIALOG_COUNTRY_CODE_LEN 2
+
+struct SceNetCheckDialogAgeRestriction {
+    char countryCode[SCE_NETCHECK_DIALOG_COUNTRY_CODE_LEN];
+    SceInt8 age;
+    SceInt8 padding;
+};
+
+struct SceNetCheckDialogPS3ConnectParam {
+    //SceNetCheckDialogPS3ConnectAction action;
+    // char ssid[SCE_NET_CTL_SSID_LEN];
+    // char wpaKey[SCE_NET_CTL_WIFI_SECURITY_KEY_LEN];
+    char titleId[9 + 1];
+};
+
+struct SceNetCheckDialogParam {
+    SceUInt32 sdkVersion;
+    SceCommonDialogParam commonParam;
+    SceNetCheckDialogMode mode;
+    //SceNpCommunicationId npCommunicationId;
+    SceNetCheckDialogPS3ConnectParam *ps3ConnectParam;
+    //SceNetAdhocctlGroupName *groupName;
+    SceUInt32 timeoutUs;
+    SceInt8 defaultAgeRestriction;
+    SceInt8 padding[3];
+    SceInt32 ageRestrictionCount;
+    const SceNetCheckDialogAgeRestriction *ageRestriction;
+    SceUInt8 reserved[104];
 };
 
 struct SceSaveDataDialogResult {

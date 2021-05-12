@@ -60,11 +60,20 @@ EXPORT(int, _sceFiosKernelOverlayGetInfoForProcess) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, _sceFiosKernelOverlayGetList) {
-    return UNIMPLEMENTED();
+EXPORT(int, _sceFiosKernelOverlayGetList, SceUID pid, char loOrderFilter, char hiOrderFilter, sceFiosKernelOverlayGetList_opt *opt) {
+    STUBBED("Set pActualIDs to 0");
+    LOG_DEBUG("pid: {}", pid);
+    LOG_DEBUG("buffer_size: {}", opt->buffer_size);
+    LOG_DEBUG("maxIDs: {}", opt->maxIDs);
+
+    *opt->actualIDs.get(emuenv.mem) = 0;
+    LOG_DEBUG("pActualIDs: {}", *opt->actualIDs.get(emuenv.mem));
+
+    return 0;
 }
 
-EXPORT(int, _sceFiosKernelOverlayGetRecommendedScheduler) {
+EXPORT(int, _sceFiosKernelOverlayGetRecommendedScheduler, SceUID pid, const char *pInPath) {
+    //LOG_DEBUG("pid: {}, pInPath: {}", pid, pInPath);
     return UNIMPLEMENTED();
 }
 

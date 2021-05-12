@@ -1427,7 +1427,7 @@ EXPORT(int, sceGxmBeginCommandList, SceGxmContext *deferredContext) {
     return 0;
 }
 
-EXPORT(int, sceGxmBeginScene, SceGxmContext *context, uint32_t flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *depthStencil) {
+EXPORT(int, sceGxmBeginScene, SceGxmContext *context, SceGxmSceneFlags flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *depthStencil) {
     TRACY_FUNC(sceGxmBeginScene, context, flags, renderTarget, validRegion, vertexSyncObject, fragmentSyncObject, colorSurface, depthStencil);
     if (!context) {
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
@@ -1492,7 +1492,7 @@ EXPORT(int, sceGxmBeginScene, SceGxmContext *context, uint32_t flags, const SceG
     return 0;
 }
 
-EXPORT(int, sceGxmBeginSceneEx, SceGxmContext *immediateContext, uint32_t flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *loadDepthStencilSurface, const SceGxmDepthStencilSurface *storeDepthStencilSurface) {
+EXPORT(int, sceGxmBeginSceneEx, SceGxmContext *immediateContext, SceGxmSceneFlags flags, const SceGxmRenderTarget *renderTarget, const SceGxmValidRegion *validRegion, SceGxmSyncObject *vertexSyncObject, Ptr<SceGxmSyncObject> fragmentSyncObject, const SceGxmColorSurface *colorSurface, const SceGxmDepthStencilSurface *loadDepthStencilSurface, const SceGxmDepthStencilSurface *storeDepthStencilSurface) {
     TRACY_FUNC(sceGxmBeginSceneEx, immediateContext, flags, renderTarget, validRegion, vertexSyncObject, fragmentSyncObject, colorSurface, loadDepthStencilSurface, storeDepthStencilSurface);
     // storeDepthStencilSurface
     if (!immediateContext) {
@@ -1919,12 +1919,15 @@ EXPORT(int, sceGxmDestroyContext, Ptr<SceGxmContext> context) {
     return 0;
 }
 
-EXPORT(int, sceGxmDestroyDeferredContext, SceGxmContext *deferredContext) {
+EXPORT(int, sceGxmDestroyDeferredContext, Ptr<SceGxmContext> deferredContext) {
     TRACY_FUNC(sceGxmDestroyDeferredContext, deferredContext);
     if (!deferredContext) {
         return RET_ERROR(SCE_GXM_ERROR_INVALID_POINTER);
     }
-    return UNIMPLEMENTED();
+
+    free(emuenv.mem, deferredContext);
+
+    return 0;
 }
 
 EXPORT(int, sceGxmDestroyRenderTarget, Ptr<SceGxmRenderTarget> renderTarget) {
@@ -3488,6 +3491,7 @@ EXPORT(void, sceGxmSetBackStencilRef, SceGxmContext *context, uint8_t sref) {
 
 EXPORT(void, sceGxmSetBackVisibilityTestEnable, SceGxmContext *context, SceGxmVisibilityTestMode enable) {
     TRACY_FUNC(sceGxmSetBackVisibilityTestEnable, context, enable);
+    //LOG_DEBUG("Back, State: {}", enable);
     UNIMPLEMENTED();
 }
 

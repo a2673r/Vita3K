@@ -836,8 +836,8 @@ EXPORT(SceInt32, sceNgsVoicePatchSetVolumes, SceNgsPatchHandle patch_handle, con
     if (!patch || patch->output_sub_index == -1)
         return RET_ERROR(SCE_NGS_ERROR_INVALID_ARG);
 
-    for (int i = 0; i < std::min(vols, 2); i++)
-        patch->volume_matrix[output_channel][i] = volumes[i];
+    //for (int i = 0; i < std::min(vols, 2); i++)
+    //    patch->volume_matrix[output_channel][i] = volumes[i];
 
     return SCE_NGS_OK;
 }

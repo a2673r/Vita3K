@@ -443,6 +443,7 @@ EXPORT(int, _sceKernelGetThreadContextForVM, SceUID threadId, Ptr<SceKernelThrea
         infoCpu->st = 100000; // Todo
         infoCpu->teehbr = 100000; // Todo
         infoCpu->tpidrurw = read_tpidruro(*thread->cpu);
+        //LOG_DEBUG("cpsr: {}, tpidrurw: {}", infoCpu->cpsr, infoCpu->tpidrurw);
     }
 
     SceKernelThreadVfpRegisterInfo *infoVfp = pVfpRegisterInfo.get(emuenv.mem);

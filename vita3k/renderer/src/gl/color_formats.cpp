@@ -43,6 +43,7 @@ static const GLint swizzle_ar[4] = { GL_RED, GL_ZERO, GL_ZERO, GL_GREEN };
 static const GLint swizzle_ra[4] = { GL_RED, GL_ZERO, GL_ZERO, GL_GREEN };
 
 static const GLint swizzle_r[4] = { GL_RED, GL_ZERO, GL_ZERO, GL_ONE };
+static const GLint swizzle_g[4] = { GL_GREEN, GL_ZERO, GL_ZERO, GL_ONE };
 
 static const GLint *translate_swizzle(SceGxmColorSwizzle4Mode mode) {
     switch (mode) {
@@ -92,9 +93,8 @@ static const GLint *translate_swizzle(SceGxmColorSwizzle1Mode mode) {
     case SCE_GXM_COLOR_SWIZZLE1_R:
         return swizzle_r;
     case SCE_GXM_COLOR_SWIZZLE1_G:
-        LOG_ERROR("unimplemented swizzle1 mode {}", log_hex(mode));
-        break;
-    }
+        return swizzle_g;
+ }
 
     return swizzle_r;
 }
@@ -108,14 +108,26 @@ GLenum translate_internal_format(SceGxmColorBaseFormat base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_S8S8S8S8:
         return GL_RGBA8_SNORM;
 
+    case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8:
+        return GL_RGB8_SNORM;
+
     case SCE_GXM_COLOR_BASE_FORMAT_F16F16F16F16:
         return GL_RGBA16F;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_U16:
+         return GL_R16_SNORM;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_U2F10F10F10:
+        return GL_RGBA;
 
     case SCE_GXM_COLOR_BASE_FORMAT_U2U10U10U10:
         return GL_RGB10_A2;
 
     case SCE_GXM_COLOR_BASE_FORMAT_F11F11F10:
         return GL_R11F_G11F_B10F;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_F32:
+        return GL_R32F;
 
     case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
         return GL_RG32F;
@@ -126,9 +138,6 @@ GLenum translate_internal_format(SceGxmColorBaseFormat base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_U8:
         return GL_R8;
 
-    case SCE_GXM_COLOR_BASE_FORMAT_U8U8:
-        return GL_RG8;
-
     default:
         LOG_ERROR("Unknown base format {}", log_hex(base_format));
         return GL_RGBA8;
@@ -138,38 +147,45 @@ GLenum translate_internal_format(SceGxmColorBaseFormat base_format) {
 GLenum translate_format(SceGxmColorBaseFormat base_format) {
     switch (base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8U8:
-        return GL_RGBA;
-
     case SCE_GXM_COLOR_BASE_FORMAT_S8S8S8S8:
-        return GL_RGBA;
-
     case SCE_GXM_COLOR_BASE_FORMAT_U2U10U10U10:
+    case SCE_GXM_COLOR_BASE_FORMAT_U2F10F10F10:    
+    case SCE_GXM_COLOR_BASE_FORMAT_F16F16F16F16:
         return GL_RGBA;
 
-    case SCE_GXM_COLOR_BASE_FORMAT_U8U8:
     case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
         return GL_RG;
 
+
+
     case SCE_GXM_COLOR_BASE_FORMAT_F11F11F10:
+    case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8:
         return GL_RGB;
 
     case SCE_GXM_COLOR_BASE_FORMAT_F16:
+    case SCE_GXM_COLOR_BASE_FORMAT_U16:
     case SCE_GXM_COLOR_BASE_FORMAT_U8:
+    case SCE_GXM_COLOR_BASE_FORMAT_F32:
         return GL_RED;
 
-    default: return GL_RGBA;
+    default:
+        LOG_DEBUG("Missing format: {}", log_hex(base_format));
+        return GL_RGBA;
     }
 }
 
 GLenum translate_type(SceGxmColorBaseFormat base_format) {
     switch (base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_U8:
-    case SCE_GXM_COLOR_BASE_FORMAT_U8U8:
+    case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8:
     case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8U8:
         return GL_UNSIGNED_BYTE;
 
     case SCE_GXM_COLOR_BASE_FORMAT_S8S8S8S8:
         return GL_BYTE;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_U16:
+        return GL_UNSIGNED_SHORT;
 
     case SCE_GXM_COLOR_BASE_FORMAT_F16F16F16F16:
         return GL_HALF_FLOAT;
@@ -180,6 +196,7 @@ GLenum translate_type(SceGxmColorBaseFormat base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_F11F11F10:
         return GL_UNSIGNED_INT_10F_11F_11F_REV;
 
+    case SCE_GXM_COLOR_BASE_FORMAT_F32:
     case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
         return GL_FLOAT;
 
@@ -187,6 +204,7 @@ GLenum translate_type(SceGxmColorBaseFormat base_format) {
         return GL_HALF_FLOAT;
 
     default:
+        LOG_DEBUG("Missing type: {}", log_hex(base_format));
         return GL_UNSIGNED_BYTE;
     }
 }
@@ -195,7 +213,7 @@ const GLint *translate_swizzle(SceGxmColorFormat fmt) {
     const SceGxmColorBaseFormat base_format = gxm::get_base_format(fmt);
     const uint32_t swizzle = fmt & SCE_GXM_COLOR_SWIZZLE_MASK;
     switch (base_format) {
-    // 1 Component.
+    // 4 Component.
     case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8U8:
     case SCE_GXM_COLOR_BASE_FORMAT_S8S8S8S8:
     case SCE_GXM_COLOR_BASE_FORMAT_F16F16F16F16:
@@ -203,20 +221,26 @@ const GLint *translate_swizzle(SceGxmColorFormat fmt) {
     case SCE_GXM_COLOR_BASE_FORMAT_U2F10F10F10:
         return translate_swizzle(static_cast<SceGxmColorSwizzle4Mode>(swizzle));
 
+    // 3 Component.
     case SCE_GXM_COLOR_BASE_FORMAT_SE5M9M9M9:
     case SCE_GXM_COLOR_BASE_FORMAT_U5U6U5:
     case SCE_GXM_COLOR_BASE_FORMAT_F11F11F10:
+    case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8:
         return translate_swizzle(static_cast<SceGxmColorSwizzle3Mode>(swizzle));
 
+    // 2 Component.
     case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
-    case SCE_GXM_COLOR_BASE_FORMAT_U8U8:
         return translate_swizzle(static_cast<SceGxmColorSwizzle2Mode>(swizzle));
 
+    // 1 Component.
+    case SCE_GXM_COLOR_BASE_FORMAT_U16:
     case SCE_GXM_COLOR_BASE_FORMAT_U8:
     case SCE_GXM_COLOR_BASE_FORMAT_F16:
+    case SCE_GXM_COLOR_BASE_FORMAT_F32:
         return translate_swizzle(static_cast<SceGxmColorSwizzle1Mode>(swizzle));
 
     default:
+        //LOG_DEBUG("missing format: {}, swizzle: {}", log_hex(base_format), swizzle);
         break;
     }
 
@@ -232,7 +256,6 @@ size_t bytes_per_pixel_in_gl_storage(SceGxmColorBaseFormat base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_U8:
         return 1;
     case SCE_GXM_COLOR_BASE_FORMAT_F16:
-    case SCE_GXM_COLOR_BASE_FORMAT_U8U8:
         return 2;
     case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8U8:
     case SCE_GXM_COLOR_BASE_FORMAT_S8S8S8S8:

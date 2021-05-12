@@ -18,6 +18,8 @@
 #include "SceThreadmgrForDriver.h"
 #include "../SceLibKernel/SceLibKernel.h"
 
+#include <kernel/state.h>
+
 EXPORT(int, ksceKernelCancelCallback) {
     return UNIMPLEMENTED();
 }
@@ -150,8 +152,13 @@ EXPORT(int, ksceKernelGetThreadCpuRegisters) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, ksceKernelGetThreadCurrentPriority) {
-    return CALL_EXPORT(sceKernelGetThreadCurrentPriority);
+EXPORT(SceInt32, ksceKernelGetThreadCurrentPriority) {
+    const ThreadStatePtr thread = emuenv.kernel.get_thread(thread_id);
+
+    if (!thread)
+        return RET_ERROR(SCE_KERNEL_ERROR_UNKNOWN_THREAD_ID);
+    LOG_DEBUG("priority: {}", thread->priority); 
+    return thread->priority;
 }
 
 EXPORT(int, ksceKernelGetThreadId) {

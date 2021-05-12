@@ -465,7 +465,7 @@ void upload_bound_texture(VKTextureCacheState &cache, SceGxmTextureBaseFormat ba
 
     if (staging_buffer.used_so_far + upload_size > staging_buffer.buffer.size) {
         LOG_ERROR("Staging buffer size left ({}) is too small for texture size {}!", staging_buffer.buffer.size - staging_buffer.used_so_far, upload_size);
-        return;
+        //return;
     }
 
     memcpy(reinterpret_cast<uint8_t *>(staging_buffer.buffer.mapped_data) + staging_buffer.used_so_far, text_data, upload_size);

@@ -44,8 +44,11 @@ EXPORT(int, sceCodecEngineCloseUnmapMemBlock, SceUID uid) {
     return 0;
 }
 
-EXPORT(int, sceCodecEngineFreeMemoryFromUnmapMemBlock) {
+EXPORT(SceInt32, sceCodecEngineFreeMemoryFromUnmapMemBlock, SceUID uid, SceUIntVAddr p) {
     TRACY_FUNC(sceCodecEngineFreeMemoryFromUnmapMemBlock);
+    std::lock_guard<std::mutex>(emuenv.kernel.mutex);
+    emuenv.kernel.codec_blocks.erase(uid);
+    LOG_DEBUG("uid: {}", uid);
     STUBBED("always return success");
     return 0;
 }

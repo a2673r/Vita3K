@@ -279,6 +279,7 @@ static constexpr vk::ComponentMapping swizzle_abgr = { Swizzle::eA, Swizzle::eB,
 static constexpr vk::ComponentMapping swizzle_gbar = { Swizzle::eG, Swizzle::eB, Swizzle::eA, Swizzle::eR };
 static constexpr vk::ComponentMapping swizzle_1bgr = { Swizzle::eOne, Swizzle::eB, Swizzle::eG, Swizzle::eR };
 static constexpr vk::ComponentMapping swizzle_1rgb = { Swizzle::eOne, Swizzle::eR, Swizzle::eG, Swizzle::eB };
+static constexpr vk::ComponentMapping u8u8u8x8_bgr1 = { Swizzle::eG, Swizzle::eB, Swizzle::eA, Swizzle::eR };
 
 namespace color {
 
@@ -576,7 +577,7 @@ static const vk::ComponentMapping translate_swizzle4(SceGxmTextureSwizzle4Mode m
     case SCE_GXM_TEXTURE_SWIZZLE4_RGB1:
         return swizzle_1bgr;
     case SCE_GXM_TEXTURE_SWIZZLE4_BGR1:
-        return swizzle_1rgb;
+        return u8u8u8x8_bgr1;
     default:
         LOG_ERROR("Unknown swizzle mode {}", log_hex(mode));
         return {};

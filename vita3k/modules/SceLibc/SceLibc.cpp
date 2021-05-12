@@ -1,5 +1,5 @@
 // Vita3K emulator project
-// Copyright (C) 2023 Vita3K team
+// Copyright (C) 2021 Vita3K team
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -252,11 +252,9 @@ EXPORT(int, _sceLdTlsUnregisterModuleInfo) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(Ptr<int>, _sceLibcErrnoLoc) {
+EXPORT(int, _sceLibcErrnoLoc) {
     TRACY_FUNC(_sceLibcErrnoLoc);
-    // tls key from disasmed source
-    auto res = emuenv.kernel.get_thread_tls_addr(emuenv.mem, thread_id, 0x88);
-    return res.cast<int>();
+    return UNIMPLEMENTED();
 }
 
 EXPORT(int, abort) {
@@ -1122,12 +1120,25 @@ EXPORT(int, setvbuf, FILE *stream, char *buffer, int mode, size_t size) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, snprintf, char *s, size_t n, const char *format, module::vargs args) {
-    // TODO: add args to tracy func
-    TRACY_FUNC(snprintf, s, n, format);
+EXPORT(int, snprintf, char *dst, unsigned int max, const char *fmt, module::vargs args) {
+    TRACY_FUNC(snprintf);
+    std::vector<char> buffer(1024);
 
-    const ThreadStatePtr thread = emuenv.kernel.get_thread(thread_id);
-    return utils::snprintf(s, n, format, *(thread->cpu), emuenv.mem, args);
+    const ThreadStatePtr thread = lock_and_find(thread_id, emuenv.kernel.threads, emuenv.kernel.mutex);
+
+    if (!thread) {
+        return SCE_KERNEL_ERROR_UNKNOWN_THREAD_ID;
+    }
+
+    const int result = utils::snprintf(buffer.data(), buffer.size(), fmt, *(thread->cpu), emuenv.mem, args);
+
+    if (!result) {
+        return SCE_KERNEL_ERROR_INVALID_ARGUMENT;
+    }
+    dst = buffer.data();
+    LOG_INFO("{}, {}", buffer.data(), max);
+
+    return SCE_KERNEL_OK;
 }
 
 EXPORT(int, snprintf_s) {
@@ -1493,11 +1504,14 @@ EXPORT(int, vscanf_s) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, vsnprintf, char *s, size_t n, const char *format, Address args) {
-    TRACY_FUNC(vsnprintf, s, n, format, args);
-
-    module::vargs vargs(args);
-    return CALL_EXPORT(snprintf, s, n, format, vargs);
+EXPORT(int, vsnprintf, char *s, size_t n, const char *format, va_list arg) {
+    TRACY_FUNC(vsnprintf, s, n, format, arg);
+    // Disable warninig here is needed to compile on windows because we
+    // are turning some warnings into errors to allow makepkg default flags
+#pragma warning(push)
+#pragma warning(disable : 4774)
+    return snprintf(s, n, format, arg);
+#pragma warning(pop)
 }
 
 EXPORT(int, vsnprintf_s) {

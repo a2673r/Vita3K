@@ -321,6 +321,48 @@ COMMAND(handle_transfer_copy) {
             // Copy pixel from source to destination
             copy_pixel(src_offset, dest_offset);
         }
+        LOG_DEBUG("Transfer from linear to swizzled");
+    } else if ((src_type == SCE_GXM_TRANSFER_SWIZZLED) && (dst_type == SCE_GXM_TRANSFER_LINEAR)) {
+        // Set the minimum between width and height of source
+        const uint32_t min = src_width < src_height ? src_width : src_height;
+
+        // Set the log2 of minimum
+        const size_t k = static_cast<size_t>(log2(min));
+
+        for (uint32_t i = 0; i < (src_width * src_height); i++) {
+            // Decode Morton 2
+            const uint32_t dm_x = texture::decode_morton2_x(i);
+            const uint32_t dm_y = texture::decode_morton2_y(i);
+
+            // Set mask
+            const uint32_t mask = min - 1;
+
+            // Set i aligned to 4
+            const uint32_t i_aligned = i >> (2 * k) << (2 * k);
+
+            // Get x/y of source
+            uint32_t x, y;
+            if (src_height < src_width) {
+                const uint32_t j = i_aligned | (dm_y << k) | (dm_x & mask);
+                x = j / src_height;
+                y = j % src_height;
+            } else {
+                const uint32_t j = i_aligned | (dm_x << k) | (dm_y & mask);
+                x = j % src_width;
+                y = j / src_width;
+            }
+
+            if (y >= src_height || x >= src_width)
+                continue;
+
+            // Set offset of source and destination
+            const uint32_t src_offset = ((i + src->x) + (src->y * src->stride)) * src_bytes_per_pixel;
+            const uint32_t dest_offset = ((x + dest->x) * dest_bytes_per_pixel) + ((y + dest->y) * dest->stride);
+            
+            // Copy pixel from source to destination
+            //copy_pixel(src_offset, dest_offset);
+        }
+            LOG_DEBUG("Transfer from swizzled to linear");
     } else
         LOG_WARN("No convertion from SceGxmTransferType {} to {} is supported yet", (int)src_type, (int)dst_type);
 
@@ -377,7 +419,7 @@ COMMAND(handle_transfer_fill) {
             auto dest_ptr = (uint8_t *)dest->address.get(mem) + dest_offset;
 
             // Fill color in destination
-            memcpy(dest_ptr, &fill_color, bytes_per_pixel);
+            std::fill(dest_ptr, dest_ptr + bytes_per_pixel, fill_color);
         }
     }
 

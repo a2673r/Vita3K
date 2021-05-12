@@ -114,6 +114,7 @@ EXPORT(int, sceJpegDecodeMJpeg, const unsigned char *pJpeg, SceSize isize, uint8
 
     state->decoder->send(pJpeg, isize);
     state->decoder->receive(temporary.data(), &size);
+    LOG_DEBUG("Decoded JPEG to {}x{}", size.width, size.height);
 
     convert_yuv_to_rgb(temporary.data(), pRGBA, size.width, size.height, state->decoder->get_color_space());
 

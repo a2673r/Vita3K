@@ -326,7 +326,7 @@ EXPORT(int, sceAppUtilSaveDataMount) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppUtilSaveDataSlotCreate, unsigned int slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotCreate, SceUInt32 slotId, const SceAppUtilSaveDataSlotParam *param, const SceAppUtilMountPoint *mountPoint) {
     TRACY_FUNC(sceAppUtilSaveDataSlotCreate, slotId, param, mountPoint);
     const auto fd = open_file(emuenv.io, construct_slotparam_path(slotId).c_str(), SCE_O_WRONLY | SCE_O_CREAT, emuenv.pref_path, export_name);
     write_file(fd, param, sizeof(SceAppUtilSaveDataSlotParam), emuenv.io, export_name);
@@ -334,13 +334,13 @@ EXPORT(int, sceAppUtilSaveDataSlotCreate, unsigned int slotId, SceAppUtilSaveDat
     return 0;
 }
 
-EXPORT(int, sceAppUtilSaveDataSlotDelete, unsigned int slotId, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotDelete, SceUInt32 slotId, SceAppUtilMountPoint *mountPoint) {
     TRACY_FUNC(sceAppUtilSaveDataSlotDelete, slotId, mountPoint);
     remove_file(emuenv.io, construct_slotparam_path(slotId).c_str(), emuenv.pref_path, export_name);
     return 0;
 }
 
-EXPORT(int, sceAppUtilSaveDataSlotGetParam, unsigned int slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotGetParam, SceUInt32 slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
     TRACY_FUNC(sceAppUtilSaveDataSlotGetParam, slotId, param, mountPoint);
     const auto fd = open_file(emuenv.io, construct_slotparam_path(slotId).c_str(), SCE_O_RDONLY, emuenv.pref_path, export_name);
     if (fd < 0)
@@ -404,7 +404,7 @@ EXPORT(SceInt32, sceAppUtilSaveDataSlotSearch, SceAppUtilWorkBuffer *workBuf, co
     return 0;
 }
 
-EXPORT(SceInt32, sceAppUtilSaveDataSlotSetParam, SceAppUtilSaveDataSlotId slotId, SceAppUtilSaveDataSlotParam *param, SceAppUtilMountPoint *mountPoint) {
+EXPORT(SceInt32, sceAppUtilSaveDataSlotSetParam, SceAppUtilSaveDataSlotId slotId, const SceAppUtilSaveDataSlotParam *param, const SceAppUtilMountPoint *mountPoint) {
     TRACY_FUNC(sceAppUtilSaveDataSlotSetParam, slotId, param, mountPoint);
     const auto fd = open_file(emuenv.io, construct_slotparam_path(slotId).c_str(), SCE_O_WRONLY, emuenv.pref_path, export_name);
     if (fd < 0)

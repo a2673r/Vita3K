@@ -152,6 +152,7 @@ H264DecoderState::H264DecoderState(uint32_t width, uint32_t height) {
 
     context = avcodec_alloc_context3(codec);
     assert(context);
+    context->codec_type = AVMEDIA_TYPE_VIDEO;
     context->width = width;
     context->height = height;
 

@@ -86,9 +86,13 @@ EXPORT(int, sceNpInit, np::CommunicationConfig *comm_config, void *dontcare) {
     return 0;
 }
 
-EXPORT(int, sceNpManagerGetAccountRegion) {
-    TRACY_FUNC(sceNpManagerGetAccountRegion);
-    return UNIMPLEMENTED();
+EXPORT(int, sceNpManagerGetAccountRegion, np::SceNpCountryCode *countryCode, int *language) {
+    TRACY_FUNC(sceNpManagerGetAccountRegion, language);
+    STUBBED("Stub");
+    *countryCode = np::SceNpCountryCode(emuenv.cfg.sys_lang);
+    *language = emuenv.cfg.sys_lang;
+
+    return 0;
 }
 
 EXPORT(int, sceNpManagerGetCachedParam) {

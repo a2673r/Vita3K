@@ -22,6 +22,7 @@
 #include <io/functions.h>
 #include <io/io.h>
 #include <packages/functions.h>
+#include <util/safe_time.h>
 
 #include <modules/module_parent.h>
 #include <util/find.h>
@@ -36,7 +37,7 @@ struct SceAppMgrSaveDataDataDelete {
     uint8_t reserved[32];
     Ptr<SceAppUtilSaveDataDataSaveItem> files;
     int fileNum;
-    SceAppUtilMountPoint *mountPoint;
+    SceAppUtilMountPoint mountPoint;
 };
 
 struct SceAppMgrSaveDataData {
@@ -46,8 +47,22 @@ struct SceAppMgrSaveDataData {
     uint8_t reserved[32];
     Ptr<SceAppUtilSaveDataDataSaveItem> files;
     int fileNum;
-    SceAppUtilMountPoint *mountPoint;
+    SceAppUtilMountPoint mountPoint;
     unsigned int *requiredSizeKiB;
+};
+
+struct SceAppMgrSaveDataSlot {
+    int size;
+    unsigned int slotId;
+    Ptr<SceAppUtilSaveDataSlotParam> slotParam;
+    uint8_t reserved[116];
+    SceAppUtilMountPoint mountPoint;
+};
+
+struct SceAppMgrSaveDataSlotDelete {
+    int size;
+    unsigned int slotId;
+    SceAppUtilMountPoint mountPoint;
 };
 
 EXPORT(SceInt32, _sceAppMgrGetAppState, SceAppMgrAppState *appState, SceUInt32 sizeofSceAppMgrAppState, SceUInt32 buildVersion) {
@@ -90,9 +105,17 @@ EXPORT(int, sceAppMgrAppMount) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrAppParamGetInt) {
-    TRACY_FUNC(sceAppMgrAppParamGetInt);
-    return UNIMPLEMENTED();
+EXPORT(SceInt32, sceAppMgrAppParamGetInt, SceAppUtilAppParamId paramId, SceInt32 *value) {
+    TRACY_FUNC(sceAppMgrAppParamGetInt, paramId, value);
+    if (paramId != SCE_APPUTIL_APPPARAM_ID_SKU_FLAG)
+        return RET_ERROR(SCE_APPUTIL_ERROR_PARAMETER);
+
+    if (!value)
+        return RET_ERROR(SCE_APPUTIL_ERROR_NOT_INITIALIZED);
+
+    *value = emuenv.app_sku_flag;
+
+    return 0;
 }
 
 EXPORT(SceInt32, sceAppMgrAppParamGetString, int pid, int param, char *string, int length) {
@@ -567,6 +590,26 @@ EXPORT(int, sceAppMgrSaveDataDataSave, Ptr<SceAppMgrSaveDataData> data) {
             break;
         }
     }
+
+    if (data.get(emuenv.mem)->slotParam) {
+        SceDateTime modified_time;
+        std::time_t time = std::time(0);
+        tm local = {};
+
+        SAFE_LOCALTIME(&time, &local);
+        modified_time.year = local.tm_year + 1900;
+        modified_time.month = local.tm_mon + 1;
+        modified_time.day = local.tm_mday;
+        modified_time.hour = local.tm_hour;
+        modified_time.minute = local.tm_min;
+        modified_time.second = local.tm_sec;
+        modified_time.microsecond = time;
+        data.get(emuenv.mem)->slotParam.get(emuenv.mem)->modifiedTime = modified_time;
+        fd = open_file(emuenv.io, construct_slotparam_path(data.get(emuenv.mem)->slotId).c_str(), SCE_O_WRONLY | SCE_O_CREAT, emuenv.pref_path, export_name);
+        write_file(fd, data.get(emuenv.mem)->slotParam.get(emuenv.mem), sizeof(SceAppUtilSaveDataSlotParam), emuenv.io, export_name);
+        close_file(emuenv.io, fd, export_name);
+    }
+
     return 0;
 }
 
@@ -585,34 +628,67 @@ EXPORT(int, sceAppMgrSaveDataMount) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrSaveDataSlotCreate) {
-    TRACY_FUNC(sceAppMgrSaveDataSlotCreate);
+EXPORT(int, sceAppMgrSaveDataSlotCreate, Ptr<SceAppMgrSaveDataSlot> data) {
+    TRACY_FUNC(sceAppMgrSaveDataSlotCreate, data);
+    const auto fd = open_file(emuenv.io, construct_slotparam_path(data.get(emuenv.mem)->slotId).c_str(), SCE_O_WRONLY | SCE_O_CREAT, emuenv.pref_path, export_name);
+    write_file(fd, &data.get(emuenv.mem)->slotParam, sizeof(SceAppUtilSaveDataSlotParam), emuenv.io, export_name);
+    close_file(emuenv.io, fd, export_name);
+
+    return 0;
+}
+
+EXPORT(int, sceAppMgrSaveDataSlotDelete, Ptr<SceAppMgrSaveDataSlot> data) {
+    TRACY_FUNC(sceAppMgrSaveDataSlotDelete, data);
+    remove_file(emuenv.io, construct_slotparam_path(data.get(emuenv.mem)->slotId).c_str(), emuenv.pref_path, export_name);
+
+    return 0;
+}
+
+EXPORT(int, sceAppMgrSaveDataSlotFileClose, Ptr<SceAppMgrSaveDataSlot> data) {
+    TRACY_FUNC(sceAppMgrSaveDataSlotFileClose, data);
+    LOG_DEBUG("FileGetParam, slot id: {}", data.get(emuenv.mem)->slotId);
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrSaveDataSlotDelete) {
-    TRACY_FUNC(sceAppMgrSaveDataSlotDelete);
+EXPORT(int, sceAppMgrSaveDataSlotFileGetParam, Ptr<SceAppMgrSaveDataSlot> data) {
+    TRACY_FUNC(sceAppMgrSaveDataSlotFileGetParam, data);
+    LOG_DEBUG("FileGetParam, slot id: {}", data.get(emuenv.mem)->slotId);
+    /*const auto fd = open_file(emuenv.io, construct_slotparam_path(slotId).c_str(), SCE_O_WRONLY | SCE_O_CREAT, emuenv.pref_path, export_name);
+    if (fd < 0)
+        return RET_ERROR(SCE_APPUTIL_ERROR_SAVEDATA_SLOT_NOT_FOUND);
+    write_file(fd, data.get(emuenv.mem)->slotParam.get(emuenv.mem), sizeof(SceAppUtilSaveDataSlotParam), emuenv.io, export_name);
+    close_file(emuenv.io, fd, export_name);*/
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrSaveDataSlotFileClose) {
-    TRACY_FUNC(sceAppMgrSaveDataSlotFileClose);
-    return UNIMPLEMENTED();
+struct SceAppMgrSaveDataSlotFile {
+    Ptr<SceAppUtilSaveDataSlotParam> slotParam;
+    SceAppUtilMountPoint mountPoint;
+    unsigned int slotId;
+};
+
+EXPORT(int, sceAppMgrSaveDataSlotFileOpen, Ptr<SceAppMgrSaveDataSlotFile> data) {
+    TRACY_FUNC(sceAppMgrSaveDataSlotFileOpen, data);
+    //LOG_DEBUG("FileOpen, mount point: {}", data.get(emuenv.mem)->mountPoint.data);
+    const auto fd = open_file(emuenv.io, construct_slotparam_path(data.get(emuenv.mem)->slotId).c_str(), SCE_O_RDONLY, emuenv.pref_path, export_name);
+    if (fd < 0)
+        return RET_ERROR(SCE_APPUTIL_ERROR_SAVEDATA_SLOT_NOT_FOUND);
+
+    return 0;
 }
 
-EXPORT(int, sceAppMgrSaveDataSlotFileGetParam) {
-    TRACY_FUNC(sceAppMgrSaveDataSlotFileGetParam);
-    return UNIMPLEMENTED();
-}
-
-EXPORT(int, sceAppMgrSaveDataSlotFileOpen) {
-    TRACY_FUNC(sceAppMgrSaveDataSlotFileOpen);
-    return UNIMPLEMENTED();
-}
-
-EXPORT(int, sceAppMgrSaveDataSlotGetParam) {
-    TRACY_FUNC(sceAppMgrSaveDataSlotGetParam);
-    return UNIMPLEMENTED();
+EXPORT(int, sceAppMgrSaveDataSlotGetParam, Ptr<SceAppMgrSaveDataSlot> data) {
+    TRACY_FUNC(sceAppMgrSaveDataSlotGetParam, data);
+    LOG_DEBUG("GetParam, slot id: {}", data.get(emuenv.mem)->slotId);
+    /*const auto fd = open_file(emuenv.io, construct_slotparam_path(data.get(emuenv.mem)->slotId).c_str(), SCE_O_RDONLY, emuenv.pref_path, export_name);
+    if (fd < 0)
+        return RET_ERROR(SCE_APPUTIL_ERROR_SAVEDATA_SLOT_NOT_FOUND);
+    
+    read_file(&data.get(emuenv.mem)->slotParam, emuenv.io, fd, sizeof(SceAppUtilSaveDataSlotParam), export_name);
+    close_file(emuenv.io, fd, export_name);
+    data.get(emuenv.mem)->slotParam.get(emuenv.mem)->status = 0;
+    */
+    return 0;
 }
 
 EXPORT(int, sceAppMgrSaveDataSlotGetStatus) {
