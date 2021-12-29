@@ -883,6 +883,7 @@ EXPORT(int, sceGxmCreateRenderTarget, const SceGxmRenderTargetParams *params, Pt
     rt->height = params->height;
     rt->scenesPerFrame = params->scenesPerFrame;
     rt->driverMemBlock = params->driverMemBlock;
+    host.renderer->average_scene_per_frame = params->scenesPerFrame;
 
     return 0;
 }
