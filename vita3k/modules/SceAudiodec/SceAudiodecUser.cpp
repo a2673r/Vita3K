@@ -130,19 +130,15 @@ static int create_decoder(HostState &host, SceAudiodecCtrl *ctrl, SceAudiodecCod
         return host.cfg.current_config.disable_at9_decoder ? -1 : 0;
     }
     case SCE_AUDIODEC_TYPE_AAC: {
-        // Todo of AAC support, currently crash.
-        /* SceAudiodecInfoAac &info = ctrl->info.get(host.mem)->aac;
+        SceAudiodecInfoAac &info = ctrl->info.get(host.mem)->aac;
         DecoderPtr decoder = std::make_shared<AacDecoderState>(info.sample_rate, info.channels);
         state->decoders[handle] = decoder;
 
         ctrl->es_size_max = NORMAL_ES_BUFFER_SIZE;
         ctrl->pcm_size_max = NORMAL_PCM_BUFFER_SIZE;
-        info.channels = decoder->get(DecoderQuery::CHANNELS);
-        info.sample_rate = decoder->get(DecoderQuery::SAMPLE_RATE);*/
-        // no outs :O
+        LOG_CRITICAL_IF(info.is_adts || info.is_sbr, "report it to dev, is_adts: {}, is_sbr: {}", info.is_adts, info.is_sbr);
 
-        LOG_WARN("Hack for AAC codec");
-        return -1;
+        return 0;
     }
     case SCE_AUDIODEC_TYPE_MP3: {
         SceAudiodecInfoMp3 &info = ctrl->info.get(host.mem)->mp3;

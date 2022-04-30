@@ -178,14 +178,6 @@ struct AacDecoderState : public DecoderState {
     int stream_id = -1;
     std::shared_ptr<AVFormatContext> format_context;
 
-    // Stores previous packet data that has not been used yet by the format context.
-    // Temporary workaround for the Codec API.
-    uint32_t packet_coarse_index = 0;
-    uint32_t packet_fine_index = 0;
-    std::vector<std::vector<uint8_t>> packet_cache;
-
-    size_t read_packet_cache(uint8_t *data, size_t size);
-
     uint32_t get(DecoderQuery query) override;
 
     bool send(const uint8_t *data, uint32_t size) override;
