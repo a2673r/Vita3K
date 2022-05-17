@@ -37,6 +37,11 @@ static const GLint swizzle_bgra[4] = { GL_GREEN, GL_BLUE, GL_ALPHA, GL_RED };
 static const GLint swizzle_rgb[4] = { GL_BLUE, GL_GREEN, GL_RED, GL_ONE };
 static const GLint swizzle_bgr[4] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
 
+static const GLint swizzle_gr[4] = { GL_RED, GL_GREEN, GL_ZERO, GL_ONE };
+static const GLint swizzle_rg[4] = { GL_GREEN, GL_RED, GL_ZERO, GL_ONE };
+static const GLint swizzle_ar[4] = { GL_RED, GL_ZERO, GL_ZERO, GL_GREEN };
+static const GLint swizzle_ra[4] = { GL_RED, GL_ZERO, GL_ZERO, GL_GREEN };
+
 static const GLint *translate_swizzle(SceGxmColorSwizzle4Mode mode) {
     switch (mode) {
     case SCE_GXM_COLOR_SWIZZLE4_ABGR:
@@ -65,6 +70,21 @@ static const GLint *translate_swizzle(SceGxmColorSwizzle3Mode mode) {
     return swizzle_bgr;
 }
 
+static const GLint *translate_swizzle(SceGxmColorSwizzle2Mode mode) {
+    switch (mode) {
+    case SCE_GXM_COLOR_SWIZZLE2_GR:
+        return swizzle_gr;
+    case SCE_GXM_COLOR_SWIZZLE2_RG:
+        return swizzle_rg;
+    case SCE_GXM_COLOR_SWIZZLE2_RA:
+        return swizzle_ra;
+    case SCE_GXM_COLOR_SWIZZLE2_AR:
+        return swizzle_ar;
+    }
+
+    return swizzle_gr;
+}
+
 // Translate popular color base format that can be bit-casted for purposes
 GLenum translate_internal_format(SceGxmColorBaseFormat base_format) {
     switch (base_format) {
@@ -79,6 +99,9 @@ GLenum translate_internal_format(SceGxmColorBaseFormat base_format) {
 
     case SCE_GXM_COLOR_BASE_FORMAT_U2U10U10U10:
         return GL_RGBA;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
+        return GL_RG32F;
 
     default:
         return GL_RGBA;
@@ -95,6 +118,9 @@ GLenum translate_format(SceGxmColorBaseFormat base_format) {
 
     case SCE_GXM_COLOR_BASE_FORMAT_U2U10U10U10:
         return GL_RGBA;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
+        return GL_RG;
 
     default:
         return GL_RGBA;
@@ -114,6 +140,9 @@ GLenum translate_type(SceGxmColorBaseFormat base_format) {
 
     case SCE_GXM_COLOR_BASE_FORMAT_U2U10U10U10:
         return GL_UNSIGNED_INT_2_10_10_10_REV;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
+        return GL_FLOAT;
 
     default:
         return GL_UNSIGNED_BYTE;
@@ -136,6 +165,9 @@ const GLint *translate_swizzle(SceGxmColorFormat fmt) {
     case SCE_GXM_COLOR_BASE_FORMAT_U5U6U5:
         return translate_swizzle(static_cast<SceGxmColorSwizzle3Mode>(swizzle));
 
+    case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
+        return translate_swizzle(static_cast<SceGxmColorSwizzle2Mode>(swizzle));
+
     default:
         break;
     }
@@ -154,6 +186,7 @@ size_t bytes_per_pixel_in_gl_storage(SceGxmColorBaseFormat base_format) {
     case SCE_GXM_COLOR_BASE_FORMAT_U2U10U10U10:
         return 4;
     case SCE_GXM_COLOR_BASE_FORMAT_F16F16F16F16:
+    case SCE_GXM_COLOR_BASE_FORMAT_F32F32:
         return 8;
     default:
         break;
@@ -164,6 +197,10 @@ size_t bytes_per_pixel_in_gl_storage(SceGxmColorBaseFormat base_format) {
 
 bool is_write_surface_stored_rawly(SceGxmColorBaseFormat base_format) {
     return (base_format == SCE_GXM_COLOR_BASE_FORMAT_F16F16F16F16);
+}
+
+bool is_write_surface_non_linearity_filtering(SceGxmColorBaseFormat base_format) {
+    return ((base_format == SCE_GXM_COLOR_BASE_FORMAT_F32) || (base_format == SCE_GXM_COLOR_BASE_FORMAT_F32F32));
 }
 
 GLenum get_raw_store_internal_type(SceGxmColorBaseFormat base_format) {
@@ -229,7 +266,8 @@ bool convert_base_texture_format_to_base_color_format(SceGxmTextureBaseFormat fo
         { SCE_GXM_TEXTURE_BASE_FORMAT_F11F11F10, SCE_GXM_COLOR_BASE_FORMAT_F11F11F10 },
         { SCE_GXM_TEXTURE_BASE_FORMAT_SE5M9M9M9, SCE_GXM_COLOR_BASE_FORMAT_SE5M9M9M9 },
         { SCE_GXM_TEXTURE_BASE_FORMAT_SE5M9M9M9, SCE_GXM_COLOR_BASE_FORMAT_SE5M9M9M9 },
-        { SCE_GXM_TEXTURE_BASE_FORMAT_U2F10F10F10, SCE_GXM_COLOR_BASE_FORMAT_U2F10F10F10 }
+        { SCE_GXM_TEXTURE_BASE_FORMAT_U2F10F10F10, SCE_GXM_COLOR_BASE_FORMAT_U2F10F10F10 },
+        { SCE_GXM_TEXTURE_BASE_FORMAT_U32U32, SCE_GXM_COLOR_BASE_FORMAT_F32F32 }
     };
 
     auto ite = TEXTURE_TO_COLOR_FORMAT_MAPPING.find(format);
