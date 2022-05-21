@@ -161,8 +161,8 @@ void VoiceScheduler::update(KernelState &kern, const MemState &mem, const SceUID
                 voice_lock.unlock();
                 scheduler_lock.unlock();
                 voice->invoke_callback(kern, mem, thread_id, voice->finished_callback, voice->finished_callback_user_data, finished_module);
-                voice_lock.lock();
                 scheduler_lock.lock();
+                voice_lock.lock();
             }
             voice->is_keyed_off = false;
 

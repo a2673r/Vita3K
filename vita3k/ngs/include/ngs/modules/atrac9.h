@@ -66,6 +66,7 @@ struct State {
     SceInt32 current_buffer = 0;
     SceInt32 samples_generated_since_key_on = 0;
     SceInt32 bytes_consumed_since_key_on = 0;
+    SceInt32 samples_generated_total = 0;
     SceInt32 total_bytes_consumed = 0;
 
     // INTERNAL
@@ -78,6 +79,9 @@ struct Module : public ngs::Module {
 private:
     std::unique_ptr<Atrac9DecoderState> decoder;
     std::uint32_t last_config;
+
+    static SwrContext *swr_mono_to_stereo;
+    static SwrContext *swr_stereo;
 
 public:
     explicit Module();
