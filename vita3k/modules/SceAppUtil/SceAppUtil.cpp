@@ -139,10 +139,6 @@ EXPORT(int, sceAppUtilLaunchWebBrowser) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppUtilLoadSafeMemory) {
-    return UNIMPLEMENTED();
-}
-
 EXPORT(int, sceAppUtilMusicMount) {
     return UNIMPLEMENTED();
 }
@@ -342,8 +338,59 @@ EXPORT(int, sceAppUtilSaveDataUmount) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppUtilSaveSafeMemory) {
-    return UNIMPLEMENTED();
+static SceUID open_safe_mem_file(HostState &host, const char *export_name) {
+    const auto safe_mem_path = construct_savedata0_path("sce_sys/safemem", "dat");
+    return open_file(host.io, safe_mem_path.c_str(), SCE_O_WRONLY | SCE_O_CREAT, host.pref_path, export_name);
+}
+
+void SafeMemorySave(HostState &host, const void *buffer, const SceSize bufSize, SceOff offset, const char *export_name) {
+    const auto fd = open_safe_mem_file(host, export_name);
+    char *safe_mem = new char[SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE];
+    if (fd < 0)
+        memset(safe_mem, 0, SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE);
+    else
+        read_file(safe_mem, host.io, fd, SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE, export_name);
+    
+    memcpy(&safe_mem[offset], buffer, bufSize);  
+    write_file(fd, safe_mem, SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE, host.io, export_name);
+    close_file(host.io, fd, export_name);
+    
+    delete safe_mem;
+}
+
+void SafeMemoryLoad(HostState &host, void *buf, const SceSize bufSize, SceOff offset, const char *export_name) {
+    const auto fd = open_safe_mem_file(host, export_name);
+    char *safe_mem = new char[SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE];
+    if (fd < 0)
+        SafeMemorySave(host, safe_mem, SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE, offset, export_name);
+    else {
+        read_file(safe_mem, host.io, fd, SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE, export_name);
+        memcpy(buf, &safe_mem[offset], bufSize);
+    }
+
+    delete safe_mem;
+}
+
+EXPORT(SceInt32, sceAppUtilSaveSafeMemory, const void *buf, SceSize bufSize, SceOff offset) {
+    LOG_DEBUG("Save, size: {}, offset: {}", bufSize, offset);
+
+    if (offset + bufSize > SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE) {
+        return RET_ERROR(SCE_APPUTIL_ERROR_PARAMETER);
+    }
+    
+    SafeMemorySave(host, buf, bufSize, offset, export_name);
+    return bufSize;
+}
+
+EXPORT(SceInt32, sceAppUtilLoadSafeMemory, void *buf, SceSize bufSize, SceOff offset) {
+    LOG_DEBUG("Load, size: {}", bufSize);
+    if (offset + bufSize > SCE_APPUTIL_SAFEMEMORY_MEMORY_SIZE) {
+        return RET_ERROR(SCE_APPUTIL_ERROR_PARAMETER);
+    }
+
+    SafeMemoryLoad(host, buf, bufSize, offset, export_name);
+
+    return bufSize;
 }
 
 EXPORT(int, sceAppUtilShutdown) {
