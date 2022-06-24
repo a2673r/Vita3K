@@ -149,8 +149,13 @@ EXPORT(int, ksceKernelGetThreadCpuRegisters) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, ksceKernelGetThreadCurrentPriority) {
-    return UNIMPLEMENTED();
+EXPORT(SceInt32, ksceKernelGetThreadCurrentPriority) {
+    const ThreadStatePtr thread = host.kernel.get_thread(thread_id);
+
+    if (!thread)
+        return RET_ERROR(SCE_KERNEL_ERROR_UNKNOWN_THREAD_ID);
+    
+    return thread->priority;
 }
 
 EXPORT(int, ksceKernelGetThreadId) {
