@@ -17,19 +17,19 @@
 
 #pragma once
 
-#include <bit>
-#include <cstring> // memcpy
+#include <module/module.h>
+#include <modules/module_parent.h>
 
-#ifndef __cpp_lib_bit_cast
-namespace std {
-template <typename T, typename U>
-T bit_cast(U &&u) {
-    static_assert(sizeof(T) == sizeof(U));
-    union {
-        T t;
-    }; // prevent construction
-    std::memcpy(&t, &u, sizeof(t));
-    return t;
-}
-} // namespace std
-#endif
+LIBRARY_INIT_DECL(SceSharedFb);
+BRIDGE_DECL(_sceSharedFbOpen)
+BRIDGE_DECL(sceSharedFbBegin)
+BRIDGE_DECL(sceSharedFbClose)
+BRIDGE_DECL(sceSharedFbCreate)
+BRIDGE_DECL(sceSharedFbDelete)
+BRIDGE_DECL(sceSharedFbEnd)
+BRIDGE_DECL(sceSharedFbGetInfo)
+BRIDGE_DECL(sceSharedFbGetRenderingInfo)
+BRIDGE_DECL(sceSharedFbGetShellRenderPort)
+BRIDGE_DECL(sceSharedFbUpdateProcess)
+BRIDGE_DECL(sceSharedFbUpdateProcessBegin)
+BRIDGE_DECL(sceSharedFbUpdateProcessEnd)
