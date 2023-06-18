@@ -279,7 +279,7 @@ static constexpr vk::ComponentMapping swizzle_abgr = { Swizzle::eA, Swizzle::eB,
 static constexpr vk::ComponentMapping swizzle_gbar = { Swizzle::eG, Swizzle::eB, Swizzle::eA, Swizzle::eR };
 static constexpr vk::ComponentMapping swizzle_1bgr = { Swizzle::eOne, Swizzle::eB, Swizzle::eG, Swizzle::eR };
 static constexpr vk::ComponentMapping swizzle_1rgb = { Swizzle::eOne, Swizzle::eR, Swizzle::eG, Swizzle::eB };
-static constexpr vk::ComponentMapping u8u8u8x8_bgr1 = { Swizzle::eG, Swizzle::eB, Swizzle::eA, Swizzle::eR };
+static constexpr vk::ComponentMapping u8u8u8x8_bgr1 = { Swizzle::eG, Swizzle::eB, Swizzle::eOne, Swizzle::eR };
 
 namespace color {
 
@@ -694,7 +694,6 @@ vk::ComponentMapping translate_swizzle(SceGxmTextureFormat format) {
         return translate_swizzle4(static_cast<SceGxmTextureSwizzle4Mode>(swizzle));
 
     case SCE_GXM_TEXTURE_BASE_FORMAT_U4U4U4U4:
-    case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
         return translate_swizzle4_abgr(static_cast<SceGxmTextureSwizzle4Mode>(swizzle));
 
     // YUV420.
@@ -768,6 +767,7 @@ vk::Format translate_format(SceGxmTextureBaseFormat base_format) {
 
     // the following formats are all decompressed to u8u8u8u8
     case SCE_GXM_TEXTURE_BASE_FORMAT_U8U8U8:
+    case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
     case SCE_GXM_TEXTURE_BASE_FORMAT_P8:
     case SCE_GXM_TEXTURE_BASE_FORMAT_P4:
     case SCE_GXM_TEXTURE_BASE_FORMAT_PVRT2BPP:
@@ -778,10 +778,6 @@ vk::Format translate_format(SceGxmTextureBaseFormat base_format) {
     case SCE_GXM_TEXTURE_BASE_FORMAT_YUV420P3:
     case SCE_GXM_TEXTURE_BASE_FORMAT_YUV422:
         return vk::Format::eR8G8B8A8Unorm;
-
-    case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
-        LOG_WARN("Unhandled base format SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2");
-        return vk::Format::eR4G4B4A4UnormPack16;
 
     // Because of the lack of support of s8s8s8, an alpha channel is added to this texture
     case SCE_GXM_TEXTURE_BASE_FORMAT_S8S8S8:

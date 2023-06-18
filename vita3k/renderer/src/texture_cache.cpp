@@ -94,6 +94,7 @@ bool can_texture_be_unswizzled_without_decode(SceGxmTextureBaseFormat fmt, bool 
         || fmt == SCE_GXM_TEXTURE_BASE_FORMAT_U8
         || fmt == SCE_GXM_TEXTURE_BASE_FORMAT_U5U6U5
         || fmt == SCE_GXM_TEXTURE_BASE_FORMAT_U1U5U5U5
+        || fmt == SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2
         || fmt == SCE_GXM_TEXTURE_BASE_FORMAT_U8U8
         || fmt == SCE_GXM_TEXTURE_BASE_FORMAT_U8U8U8
         || fmt == SCE_GXM_TEXTURE_BASE_FORMAT_S8S8S8
@@ -292,6 +293,21 @@ static void convert_x8u24_to_f32(void *dest, const void *data, const uint32_t wi
         }
 
         src += row_length_in_pixels;
+    }
+}
+
+static void convert_U8U3U3U2_to_U8U8U8U8(void *dest, const void *data, const uint32_t width, const uint32_t height, const uint32_t pixels_per_stride) {
+    auto dst = static_cast<uint32_t *>(dest);
+    auto src = static_cast<const uint8_t *>(data);
+
+    for (uint32_t row = 0; row < height; ++row) {
+        for (uint32_t col = 0; col < width; ++col) {
+            const uint8_t src_value = src[col * 2];
+            const uint32_t value = (src_value << 24) | (src_value << 16) | (src_value << 8) | src_value;
+            *dst++ = value;
+        }
+
+        src += pixels_per_stride * 2;
     }
 }
 
@@ -600,6 +616,13 @@ void upload_bound_texture(const TextureCacheState &cache, const SceGxmTexture &g
             pixels_per_stride = width;
             upload_format = SCE_GXM_TEXTURE_BASE_FORMAT_F32;
             break;
+
+        case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
+            texture_data_decompressed.resize(width * height * 4);
+            convert_U8U3U3U2_to_U8U8U8U8(texture_data_decompressed.data(), pixels, width, height, pixels_per_stride);
+            pixels = texture_data_decompressed.data();
+            break;
+        
         case SCE_GXM_TEXTURE_BASE_FORMAT_UBC1:
         case SCE_GXM_TEXTURE_BASE_FORMAT_UBC2:
         case SCE_GXM_TEXTURE_BASE_FORMAT_UBC3:

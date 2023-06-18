@@ -392,7 +392,7 @@ GLenum translate_type(SceGxmTextureBaseFormat base_format) {
         return GL_UNSIGNED_SHORT_4_4_4_4_REV;
     case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
         LOG_WARN("Unhandled base format SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2");
-        return GL_UNSIGNED_SHORT_4_4_4_4_REV;
+        return GL_UNSIGNED_INT_8_8_8_8_REV;
     case SCE_GXM_TEXTURE_BASE_FORMAT_U1U5U5U5:
         return GL_UNSIGNED_SHORT_1_5_5_5_REV;
     case SCE_GXM_TEXTURE_BASE_FORMAT_U5U6U5:
@@ -493,14 +493,14 @@ GLenum translate_type(SceGxmTextureBaseFormat base_format) {
     return GL_UNSIGNED_BYTE;
 }
 
-static const GLint u8u8u8x8_bgr1[4] = { GL_GREEN, GL_BLUE, GL_ALPHA, GL_RED };
+static const GLint u8u8u8x8_gbar[4] = { GL_GREEN, GL_BLUE, GL_ALPHA, GL_RED };
 
 const GLint *translate_swizzle(SceGxmTextureFormat fmt) {
     //LOG_DEBUG("fmt: {}", log_hex(fmt));
     switch (fmt) {
     case SCE_GXM_TEXTURE_FORMAT_U8U8U8X8_BGR1:
          LOG_DEBUG("base format: SCE_GXM_TEXTURE_FORMAT_U8U8U8X8_BGR1");
-         return u8u8u8x8_bgr1;
+        return u8u8u8x8_gbar;
     default:
         const SceGxmTextureBaseFormat base_format = gxm::get_base_format(fmt);
         const uint32_t swizzle = fmt & SCE_GXM_TEXTURE_SWIZZLE_MASK;
