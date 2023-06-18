@@ -404,7 +404,7 @@ vk::ComponentMapping translate_swizzle(SceGxmColorFormat format) {
         return translate_swizzle4_abgr(static_cast<SceGxmColorSwizzle4Mode>(swizzle));
 
     default:
-        LOG_ERROR("Unknown format {}", log_hex(base_format));
+        LOG_ERROR("Unknown color format {}", log_hex(base_format));
         return {};
     }
 }
@@ -694,6 +694,7 @@ vk::ComponentMapping translate_swizzle(SceGxmTextureFormat format) {
         return translate_swizzle4(static_cast<SceGxmTextureSwizzle4Mode>(swizzle));
 
     case SCE_GXM_TEXTURE_BASE_FORMAT_U4U4U4U4:
+    case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
         return translate_swizzle4_abgr(static_cast<SceGxmTextureSwizzle4Mode>(swizzle));
 
     // YUV420.
@@ -706,7 +707,7 @@ vk::ComponentMapping translate_swizzle(SceGxmTextureFormat format) {
         return translate_swizzleyuv422(static_cast<SceGxmTextureSwizzleYUV422Mode>(swizzle));
 
     default:
-        LOG_ERROR("Unknown format {}", log_hex(base_format));
+        LOG_ERROR("Unknown texture format {}", log_hex(base_format));
         return {};
     }
 }
@@ -777,6 +778,10 @@ vk::Format translate_format(SceGxmTextureBaseFormat base_format) {
     case SCE_GXM_TEXTURE_BASE_FORMAT_YUV420P3:
     case SCE_GXM_TEXTURE_BASE_FORMAT_YUV422:
         return vk::Format::eR8G8B8A8Unorm;
+
+    case SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2:
+        LOG_WARN("Unhandled base format SCE_GXM_TEXTURE_BASE_FORMAT_U8U3U3U2");
+        return vk::Format::eR4G4B4A4UnormPack16;
 
     // Because of the lack of support of s8s8s8, an alpha channel is added to this texture
     case SCE_GXM_TEXTURE_BASE_FORMAT_S8S8S8:
