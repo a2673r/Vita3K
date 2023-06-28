@@ -15,7 +15,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <module/module.h>
+#include "SceNetCtl.h"
 
 #include <kernel/state.h>
 #include <net/state.h>
@@ -516,3 +516,52 @@ EXPORT(void, sceNetCtlTerm) {
     STUBBED("Stub");
     emuenv.netctl.inited = false;
 }
+
+EXPORT(int, SceNetCtl_229EAA64) {
+    TRACY_FUNC(SceNetCtl_229EAA64);
+    return UNIMPLEMENTED();
+}
+
+EXPORT(int, SceNetCtl_AC326DB7) {
+    TRACY_FUNC(SceNetCtl_AC326DB7);
+    return UNIMPLEMENTED();
+}
+
+EXPORT(int, SceNetCtl_C61F3E96) {
+    TRACY_FUNC(SceNetCtl_C61F3E96);
+    return UNIMPLEMENTED();
+}
+
+EXPORT(int, SceNetCtl_C33D7374) {
+    TRACY_FUNC(SceNetCtl_C33D7374);
+    return UNIMPLEMENTED();
+}
+
+EXPORT(int, SceNetCtl_85C9CC02) {
+    TRACY_FUNC(SceNetCtl_85C9CC02);
+    return UNIMPLEMENTED();
+}
+
+BRIDGE_IMPL(sceNetCtlAdhocDisconnect)
+BRIDGE_IMPL(sceNetCtlAdhocGetInAddr)
+BRIDGE_IMPL(sceNetCtlAdhocGetPeerList)
+BRIDGE_IMPL(sceNetCtlAdhocGetResult)
+BRIDGE_IMPL(sceNetCtlAdhocGetState)
+BRIDGE_IMPL(sceNetCtlAdhocRegisterCallback)
+BRIDGE_IMPL(sceNetCtlAdhocUnregisterCallback)
+BRIDGE_IMPL(sceNetCtlCheckCallback)
+BRIDGE_IMPL(sceNetCtlGetIfStat)
+BRIDGE_IMPL(sceNetCtlGetNatInfo)
+BRIDGE_IMPL(sceNetCtlGetPhoneMaxDownloadableSize)
+BRIDGE_IMPL(sceNetCtlInetGetInfo)
+BRIDGE_IMPL(sceNetCtlInetGetResult)
+BRIDGE_IMPL(sceNetCtlInetGetState)
+BRIDGE_IMPL(sceNetCtlInetRegisterCallback)
+BRIDGE_IMPL(sceNetCtlInetUnregisterCallback)
+BRIDGE_IMPL(sceNetCtlInit)
+BRIDGE_IMPL(sceNetCtlTerm)
+BRIDGE_IMPL(SceNetCtl_229EAA64)
+BRIDGE_IMPL(SceNetCtl_AC326DB7)
+BRIDGE_IMPL(SceNetCtl_C61F3E96)
+BRIDGE_IMPL(SceNetCtl_C33D7374)
+BRIDGE_IMPL(SceNetCtl_85C9CC02)

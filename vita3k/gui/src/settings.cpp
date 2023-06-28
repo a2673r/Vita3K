@@ -211,7 +211,7 @@ void draw_settings(GuiState &gui, EmuEnvState &emuenv) {
     const auto SIZE_MINI_PACKAGE = ImVec2(170.f * SCALE.x, 96.f * SCALE.y);
     const auto POPUP_SIZE = ImVec2(756.0f * SCALE.x, 436.0f * SCALE.y);
 
-    const auto is_background = gui.apps_background.contains("NPXS10015");
+    const auto is_background = gui.apps_background.contains("vs0:app/NPXS10015");
     auto common = emuenv.common_dialog.lang.common;
 
     ImGui::SetNextWindowPos(WINDOW_POS, ImGuiCond_Always);
@@ -225,7 +225,7 @@ void draw_settings(GuiState &gui, EmuEnvState &emuenv) {
     const auto draw_list = ImGui::GetBackgroundDrawList();
     const ImVec2 BG_POS_MAX(VIEWPORT_POS.x + VIEWPORT_SIZE.x, VIEWPORT_POS.y + VIEWPORT_SIZE.y);
     if (is_background)
-        draw_list->AddImage(gui.apps_background["NPXS10015"], VIEWPORT_POS, BG_POS_MAX);
+        draw_list->AddImage(gui.apps_background["vs0:app/NPXS10015"], VIEWPORT_POS, BG_POS_MAX);
     else
         draw_list->AddRectFilled(VIEWPORT_POS, BG_POS_MAX, IM_COL32(36.f, 120.f, 12.f, 255.f), 0.f, ImDrawFlags_RoundCornersAll);
 
@@ -850,8 +850,8 @@ void draw_settings(GuiState &gui, EmuEnvState &emuenv) {
                             gui.live_items.clear();
                             init_notice_info(gui, emuenv);
                             if (live_area_state) {
-                                update_live_area_current_open_apps_list(gui, emuenv, "NPXS10015");
-                                init_live_area(gui, emuenv, "NPXS10015");
+                                update_live_area_current_open_apps_list(gui, emuenv, "vs0:app/NPXS10015");
+                                init_live_area(gui, emuenv, "vs0:app/NPXS10015");
                             }
                         }
                         popup.clear();

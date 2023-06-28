@@ -96,7 +96,7 @@ Address resolve_export(KernelState &kernel, uint32_t nid) {
     return export_address->second;
 }
 
-Ptr<void> create_vtable(const std::vector<uint32_t>& nids, MemState& mem) {
+Ptr<void> create_vtable(const std::vector<uint32_t> &nids, MemState &mem) {
     // we need 4 bytes for the function pointer and 12 bytes for the syscall
     const uint32_t vtable_size = nids.size() * 4 * sizeof(uint32_t);
     Ptr<void> vtable = Ptr<void>(alloc(mem, vtable_size, "vtable"));
@@ -151,7 +151,7 @@ void call_import(EmuEnvState &emuenv, CPUState &cpu, uint32_t nid, SceUID thread
         } else if (emuenv.missing_nids.count(nid) == 0 || LOG_UNK_NIDS_ALWAYS) {
             const ThreadStatePtr thread = lock_and_find(thread_id, emuenv.kernel.threads, emuenv.kernel.mutex);
             LOG_ERROR("Import function for NID {} not found (thread name: {}, thread ID: {})", log_hex(nid), thread->name, thread_id);
-            LOG_DEBUG("{}\n{}", save_context(*thread->cpu).description(), thread->log_stack_traceback(emuenv.kernel));
+            LOG_DEBUG("{}\n{}", save_context(*thread->cpu).description(), thread->log_stack_traceback());
 
             if (!LOG_UNK_NIDS_ALWAYS)
                 emuenv.missing_nids.insert(nid);
@@ -196,14 +196,9 @@ SceUID load_module(EmuEnvState &emuenv, const std::string &module_path) {
     }
     LOG_INFO("Loading module \"{}\"", module_path);
     vfs::FileBuffer module_buffer;
-    bool res;
     VitaIoDevice device = device::get_device(module_path);
-    auto translated_module_path = translate_path(module_path.c_str(), device, emuenv.io.device_paths);
-    if (device == VitaIoDevice::app0)
-        res = vfs::read_app_file(module_buffer, emuenv.pref_path, emuenv.io.app_path, translated_module_path);
-    else
-        res = vfs::read_file(device, module_buffer, emuenv.pref_path, translated_module_path);
-    if (!res) {
+    auto translated_module_path = translate_path(module_path.c_str(), device, emuenv.io);
+    if (!vfs::read_file(device, module_buffer, emuenv.pref_path, translated_module_path)) {
         LOG_ERROR("Failed to read module file {}", module_path);
         return SCE_ERROR_ERRNO_ENOENT;
     }
@@ -228,14 +223,21 @@ uint32_t start_module(EmuEnvState &emuenv, const std::shared_ptr<SceKernelModule
         SceInt32 affinity = SCE_KERNEL_THREAD_CPU_AFFINITY_MASK_DEFAULT;
         // module_start is always called from new thread
         const ThreadStatePtr module_thread = emuenv.kernel.create_thread(emuenv.mem, module_name, module_start, priority, affinity, stack_size, nullptr);
-
         const auto ret = module_thread->run_guest_function(module_start.address(), args, argp);
         module_thread->exit_delete(false);
 
         LOG_INFO("Module {} (at \"{}\") module_start returned {}", module_name, module->path, log_hex(ret));
+        if (std::string(module_name) == "SceIme") {
+            // mutex_create(0, emuenv.kernel, emuenv.mem, "start_module", "SceLibIpmi", 44, 8192, 0, Ptr<SceKernelLwMutexWork>(), SyncWeight::Heavy);
+            // msgpipe_create(emuenv.kernel, "start_module", "SceImeServiceServerMP", 44, 131, 4096);
+            // semaphore_create(emuenv.kernel, "start_module", "SceImeServiceServerMC", 44, 8320, 0, 16777215);
+            // semaphore_create(emuenv.kernel, "start_module", "SceImeServiceServerDC", 44, 8320, 0, 16777215);
+        }
+
         return ret;
     }
     return 0;
+
 }
 
 /**
@@ -292,6 +294,53 @@ bool load_sys_module_internal_with_arg(EmuEnvState &emuenv, SceUID thread_id, Sc
     }
     emuenv.kernel.loaded_internal_sysmodules.push_back(module_id);
     return true;
+}
+
+int load_app_by_path(EmuEnvState &emuenv, const std::string &self_path, const char *titleid, const char *app_param) {
+    vfs::FileBuffer self_buffer;
+    const auto device = device::get_device(self_path);
+    const auto relative_path = device::remove_device_from_path(self_path, device);
+    LOG_DEBUG("device: {}, relative_path: {}", device._to_string(), relative_path);
+    const auto res = vfs::read_file(device, self_buffer, emuenv.pref_path, relative_path);
+    if (res) {
+        SceUID module_id = load_self(emuenv.kernel, emuenv.mem, self_buffer.data(), self_path);
+        if (module_id >= 0) {
+            const auto module = emuenv.kernel.loaded_modules[module_id];
+            Ptr<const void> entry_point = module->start_entry;
+            const ThreadStatePtr thread = emuenv.kernel.create_thread(emuenv.mem, titleid, entry_point, SCE_KERNEL_DEFAULT_PRIORITY_USER, SCE_KERNEL_THREAD_CPU_AFFINITY_MASK_DEFAULT, static_cast<int>(SCE_KERNEL_STACK_SIZE_USER_MAIN), nullptr);
+            const SceUID self_thread_id = thread->id;
+
+            LOG_INFO("Self executable {} ({}) loaded", module->module_name, self_path);
+
+            if (entry_point) {
+                LOG_DEBUG("Running module_start of module: {}", module->module_name);
+                SceKernelThreadOptParam param{ 0, 0 };
+                if (app_param) {
+                    std::vector<uint8_t> buf;
+                    buf.insert(buf.end(), app_param, app_param + strlen(app_param) + 1);
+                    auto arr = Ptr<uint8_t>(alloc(emuenv.mem, static_cast<uint32_t>(buf.size()), "arg"));
+                    memcpy(arr.get(emuenv.mem), buf.data(), buf.size());
+                    param.size = SceSize(buf.size());
+                    param.attr = arr.address();
+                }
+                const ThreadStatePtr self_thread = util::find(self_thread_id, emuenv.kernel.threads);
+                if (self_thread->start(param.size, Ptr<void>(param.attr)) < 0) {
+                    LOG_ERROR("Error when starting main thread of module at \"{}\"", self_path);
+                    return -1;
+                }
+                return self_thread_id;
+            } else {
+                LOG_ERROR("Error when loading self executable at \"{}\"", self_path);
+                return -1;
+            }
+        } else {
+            LOG_ERROR("Executable at \"{}\" not present", self_path);
+            return -1;
+        }
+    } else {
+        LOG_ERROR("Error when reading executable at \"{}\"", self_path);
+        return -1;
+    }
 }
 
 void init_libraries(EmuEnvState &emuenv) {

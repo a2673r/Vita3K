@@ -15,26 +15,15 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+#pragma once
+
 #include <module/module.h>
 
-EXPORT(int, sceSblPmMgrAuthEtoI) {
-    return UNIMPLEMENTED();
-}
-
-EXPORT(int, sceSblPmMgrGetCurrentMode, int *result) {
-    *result = 0;
-
-    return STUBBED("Result to 0");
-}
-
-EXPORT(int, sceSblPmMgrGetProductModeForUser) {
-    return UNIMPLEMENTED();
-}
-
-EXPORT(int, sceSblPmMgrGetProductModeFromNVS) {
-    return UNIMPLEMENTED();
-}
-
-EXPORT(int, sceSblPmMgrSetProductModeOffForUser) {
-    return UNIMPLEMENTED();
-}
+BRIDGE_DECL(sceShellUtilInitEvents)
+BRIDGE_DECL(sceShellUtilLock)
+BRIDGE_DECL(sceShellUtilRegisterEventHandler)
+BRIDGE_DECL(sceShellUtilRequestLaunchApp)
+BRIDGE_DECL(sceShellUtilUnlock)
+BRIDGE_DECL(SceShellUtil_EC5881A5)
+BRIDGE_DECL(SceShellUtil_CE35B2B8)
+BRIDGE_DECL(SceShellUtil_9B0EE918)

@@ -17,23 +17,19 @@
 
 #pragma once
 
-namespace tracy_module_utils {
+#include <module/module.h>
 
-// Helper struct to register module names on application startup. It is used in TRACY_MODULE_NAME macro
-struct tracy_module_helper {
-    int mod_id;
-    tracy_module_helper(const char *module_name);
-};
-
-// function for tracy macro to check if module is active
-bool is_tracy_active(tracy_module_helper module);
-
-// functions for settings dialog
-std::vector<std::string> get_available_module_names();
-bool is_tracy_active(const std::string &module);
-void set_tracy_active(const std::string &module, bool value);
-// function for config loading
-void load_from(const std::vector<std::string> &active_modules_str);
-// remove non-existent modules
-void cleanup(std::vector<std::string> &active_modules_str);
-} // namespace tracy_module_utils
+BRIDGE_DECL(sceNetInternalIcmConnect)
+BRIDGE_DECL(sceNetInternalInetPton)
+BRIDGE_DECL(sceNetInternal_EE1985D9)
+BRIDGE_DECL(SceNetInternal_DF815D48)
+BRIDGE_DECL(SceNetInternal_333F9CB3)
+BRIDGE_DECL(SceNetInternal_694F8996)
+BRIDGE_DECL(SceNetInternal_8157DE3E)
+BRIDGE_DECL(SceNetInternal_E03F6A77)
+BRIDGE_DECL(SceNetInternal_EAC33599)
+BRIDGE_DECL(SceNetInternal_EDAA3453)
+BRIDGE_DECL(SceNetInternal_EDAA3453)
+BRIDGE_DECL(SceNetInternal_235DE96C)
+BRIDGE_DECL(SceNetInternal_04E6136D)
+BRIDGE_DECL(SceNetInternal_A9F2277C)

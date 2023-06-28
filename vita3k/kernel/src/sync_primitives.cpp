@@ -581,8 +581,8 @@ SceUID mutex_create(SceUID *uid_out, KernelState &kernel, MemState &mem, const c
     mutexes.emplace(uid, mutex);
 
     if (LOG_SYNC_PRIMITIVES) {
-        LOG_DEBUG("{}: uid: {} thread_id: {} name: \"{}\" attr: {} init_count: {}",
-            export_name, uid, thread_id, mutex_name, attr, init_count);
+        LOG_DEBUG("{}: uid: {} thread_id: {} name: \"{}\" attr: {} init_count: {}, weight: {}",
+        export_name, uid, thread_id, mutex_name, attr, init_count, (int)weight);
     }
 
     if (uid_out) {
@@ -995,10 +995,10 @@ SceUID semaphore_create(KernelState &kernel, const char *export_name, const char
         semaphore->waiting_threads = std::make_unique<FIFOThreadDataQueue<WaitingThreadData>>();
     }
 
-    if (LOG_SYNC_PRIMITIVES) {
+    //if (LOG_SYNC_PRIMITIVES) {
         LOG_DEBUG("{}: uid: {} thread_id: {} name: \"{}\" attr: {} init_val: {} max_val: {}",
             export_name, uid, thread_id, name, attr, init_val, max_val);
-    }
+    //}
 
     const std::lock_guard<std::mutex> kernel_lock(kernel.mutex);
     kernel.semaphores.emplace(uid, semaphore);
@@ -1010,7 +1010,7 @@ SceUID semaphore_find(KernelState &kernel, const char *export_name, const char *
     if (strlen(pName) > KERNELOBJECT_MAX_NAME_LENGTH)
         return RET_ERROR(SCE_KERNEL_ERROR_UID_NAME_TOO_LONG);
 
-    if (LOG_SYNC_PRIMITIVES)
+    //if (LOG_SYNC_PRIMITIVES)
         LOG_DEBUG("{}: name: \"{}\"", export_name, pName);
 
     const std::lock_guard<std::mutex> kernel_lock(kernel.mutex);
@@ -1620,10 +1620,10 @@ SceUID msgpipe_create(KernelState &kernel, const char *export_name, const char *
 
     const SceUID uid = kernel.get_next_uid();
 
-    if (LOG_SYNC_PRIMITIVES) {
-        LOG_DEBUG("{}: uid: {} thread_id: {} name: \"{}\" attr: {}",
-            export_name, uid, thread_id, name, attr);
-    }
+    //if (LOG_SYNC_PRIMITIVES) {
+        LOG_DEBUG("{}: uid: {} thread_id: {} name: \"{}\" attr: {}, bufSize: {}",
+            export_name, uid, thread_id, name, attr, bufSize);
+    //}
 
     const MsgPipePtr msgpipe = std::make_shared<MsgPipe>(bufSize);
 
@@ -1650,7 +1650,7 @@ SceUID msgpipe_find(KernelState &kernel, const char *export_name, const char *pN
     if (strlen(pName) > KERNELOBJECT_MAX_NAME_LENGTH)
         return RET_ERROR(SCE_KERNEL_ERROR_UID_NAME_TOO_LONG);
 
-    if (LOG_SYNC_PRIMITIVES)
+    //if (LOG_SYNC_PRIMITIVES)
         LOG_DEBUG("{}: name: \"{}\"", export_name, pName);
 
     const std::lock_guard<std::mutex> kernel_lock(kernel.mutex);

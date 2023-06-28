@@ -15,7 +15,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <module/module.h>
+#include "SceCommonDialog.h"
 
 #include <dialog/types.h>
 #include <emuenv/app_util.h>
@@ -819,8 +819,8 @@ static void check_empty_param(EmuEnvState &emuenv, const SceAppUtilSaveDataSlotE
         vfs::FileBuffer thumbnail_buffer;
         if (iconPath) {
             auto device = device::get_device(empty_param->iconPath.get(emuenv.mem));
-            auto thumbnail_path = translate_path(empty_param->iconPath.get(emuenv.mem), device, emuenv.io.device_paths);
-            vfs::read_file(VitaIoDevice::ux0, thumbnail_buffer, emuenv.pref_path.wstring(), thumbnail_path);
+            auto thumbnail_path = translate_path(empty_param->iconPath.get(emuenv.mem), device, emuenv.io);
+            vfs::read_file(VitaIoDevice::ux0, thumbnail_buffer, emuenv.pref_path, thumbnail_path);
             emuenv.common_dialog.savedata.icon_buffer[idx] = thumbnail_buffer;
         } else if (iconBuf && iconBufSize != 0) {
             thumbnail_buffer.insert(thumbnail_buffer.end(), iconBuf, iconBuf + iconBufSize);
@@ -831,7 +831,7 @@ static void check_empty_param(EmuEnvState &emuenv, const SceAppUtilSaveDataSlotE
 }
 
 static void check_save_file(const uint32_t index, EmuEnvState &emuenv, const char *export_name) {
-    SceUID fd = open_file(emuenv.io, construct_slotparam_path(emuenv.common_dialog.savedata.slot_id[index]).c_str(), SCE_O_RDONLY, emuenv.pref_path.wstring(), export_name);
+    SceUID fd = open_file(emuenv.io, construct_slotparam_path(emuenv.common_dialog.savedata.slot_id[index]).c_str(), SCE_O_RDONLY, emuenv.pref_path, export_name);
     if (fd < 0) {
         auto empty_param = emuenv.common_dialog.savedata.list_empty_param[index];
         check_empty_param(emuenv, empty_param, index);
@@ -847,8 +847,8 @@ static void check_save_file(const uint32_t index, EmuEnvState &emuenv, const cha
         emuenv.common_dialog.savedata.date[index] = slot_param.modifiedTime;
         emuenv.common_dialog.savedata.has_date[index] = true;
         auto device = device::get_device(slot_param.iconPath);
-        auto thumbnail_path = translate_path(slot_param.iconPath, device, emuenv.io.device_paths);
-        vfs::read_file(device, thumbnail_buffer, emuenv.pref_path.wstring(), thumbnail_path);
+        auto thumbnail_path = translate_path(slot_param.iconPath, device, emuenv.io);
+        vfs::read_file(device, thumbnail_buffer, emuenv.pref_path, thumbnail_path);
         emuenv.common_dialog.savedata.icon_buffer[index] = thumbnail_buffer;
         emuenv.common_dialog.savedata.icon_texture[index] = {};
     }
@@ -1167,11 +1167,8 @@ EXPORT(SceInt32, sceSaveDataDialogGetResult, Ptr<SceSaveDataDialogResult> result
         result.get(emuenv.mem)->mode = save_dialog.mode;
         result.get(emuenv.mem)->result = emuenv.common_dialog.result;
         result.get(emuenv.mem)->buttonId = save_dialog.button_id;
-
-        if (!save_dialog.slot_id.empty()) {
-            result.get(emuenv.mem)->slotId = save_dialog.slot_id[save_dialog.selected_save];
-        }
-        if (result.get(emuenv.mem)->slotInfo && !save_dialog.slot_info.empty()) {
+        result.get(emuenv.mem)->slotId = save_dialog.slot_id[save_dialog.selected_save];
+        if (result.get(emuenv.mem)->slotInfo) {
             result_slotinfo->isExist = save_dialog.slot_info[save_dialog.selected_save].isExist;
             result_slotinfo->slotParam = save_dialog.slot_info[save_dialog.selected_save].slotParam;
         }
@@ -1497,3 +1494,123 @@ EXPORT(int, sceVideoImportDialogTerm) {
     TRACY_FUNC(sceVideoImportDialogTerm);
     return UNIMPLEMENTED();
 }
+
+BRIDGE_IMPL(sceCameraImportDialogAbort)
+BRIDGE_IMPL(sceCameraImportDialogGetResult)
+BRIDGE_IMPL(sceCameraImportDialogGetStatus)
+BRIDGE_IMPL(sceCameraImportDialogInit)
+BRIDGE_IMPL(sceCameraImportDialogTerm)
+BRIDGE_IMPL(sceCommonDialogGetWorkerThreadId)
+BRIDGE_IMPL(sceCommonDialogIsRunning)
+BRIDGE_IMPL(sceCommonDialogSetConfigParam)
+BRIDGE_IMPL(sceCommonDialogUpdate)
+BRIDGE_IMPL(sceCompanionUtilDialogAbort)
+BRIDGE_IMPL(sceCompanionUtilDialogGetResult)
+BRIDGE_IMPL(sceCompanionUtilDialogGetStatus)
+BRIDGE_IMPL(sceCompanionUtilDialogInit)
+BRIDGE_IMPL(sceCompanionUtilDialogTerm)
+BRIDGE_IMPL(sceCrossControllerDialogAbort)
+BRIDGE_IMPL(sceCrossControllerDialogGetResult)
+BRIDGE_IMPL(sceCrossControllerDialogGetStatus)
+BRIDGE_IMPL(sceCrossControllerDialogInit)
+BRIDGE_IMPL(sceCrossControllerDialogTerm)
+BRIDGE_IMPL(sceImeDialogAbort)
+BRIDGE_IMPL(sceImeDialogGetResult)
+BRIDGE_IMPL(sceImeDialogGetStatus)
+BRIDGE_IMPL(sceImeDialogInit)
+BRIDGE_IMPL(sceImeDialogTerm)
+BRIDGE_IMPL(sceMsgDialogAbort)
+BRIDGE_IMPL(sceMsgDialogClose)
+BRIDGE_IMPL(sceMsgDialogGetResult)
+BRIDGE_IMPL(sceMsgDialogGetStatus)
+BRIDGE_IMPL(sceMsgDialogInit)
+BRIDGE_IMPL(sceMsgDialogProgressBarInc)
+BRIDGE_IMPL(sceMsgDialogProgressBarSetMsg)
+BRIDGE_IMPL(sceMsgDialogProgressBarSetValue)
+BRIDGE_IMPL(sceMsgDialogTerm)
+BRIDGE_IMPL(sceNetCheckDialogAbort)
+BRIDGE_IMPL(sceNetCheckDialogGetPS3ConnectInfo)
+BRIDGE_IMPL(sceNetCheckDialogGetResult)
+BRIDGE_IMPL(sceNetCheckDialogGetStatus)
+BRIDGE_IMPL(sceNetCheckDialogInit)
+BRIDGE_IMPL(sceNetCheckDialogTerm)
+BRIDGE_IMPL(sceNpFriendList2DialogAbort)
+BRIDGE_IMPL(sceNpFriendList2DialogGetResult)
+BRIDGE_IMPL(sceNpFriendList2DialogGetStatus)
+BRIDGE_IMPL(sceNpFriendList2DialogInit)
+BRIDGE_IMPL(sceNpFriendList2DialogTerm)
+BRIDGE_IMPL(sceNpFriendListDialogAbort)
+BRIDGE_IMPL(sceNpFriendListDialogGetResult)
+BRIDGE_IMPL(sceNpFriendListDialogGetStatus)
+BRIDGE_IMPL(sceNpFriendListDialogInit)
+BRIDGE_IMPL(sceNpFriendListDialogTerm)
+BRIDGE_IMPL(sceNpMessageDialogAbort)
+BRIDGE_IMPL(sceNpMessageDialogGetResult)
+BRIDGE_IMPL(sceNpMessageDialogGetStatus)
+BRIDGE_IMPL(sceNpMessageDialogInit)
+BRIDGE_IMPL(sceNpMessageDialogTerm)
+BRIDGE_IMPL(sceNpProfileDialogAbort)
+BRIDGE_IMPL(sceNpProfileDialogGetResult)
+BRIDGE_IMPL(sceNpProfileDialogGetStatus)
+BRIDGE_IMPL(sceNpProfileDialogInit)
+BRIDGE_IMPL(sceNpProfileDialogTerm)
+BRIDGE_IMPL(sceNpSnsFacebookDialogAbort)
+BRIDGE_IMPL(sceNpSnsFacebookDialogGetResult)
+BRIDGE_IMPL(sceNpSnsFacebookDialogGetResultLongToken)
+BRIDGE_IMPL(sceNpSnsFacebookDialogGetStatus)
+BRIDGE_IMPL(sceNpSnsFacebookDialogInit)
+BRIDGE_IMPL(sceNpSnsFacebookDialogTerm)
+BRIDGE_IMPL(sceNpTrophySetupDialogAbort)
+BRIDGE_IMPL(sceNpTrophySetupDialogGetResult)
+BRIDGE_IMPL(sceNpTrophySetupDialogGetStatus)
+BRIDGE_IMPL(sceNpTrophySetupDialogInit)
+BRIDGE_IMPL(sceNpTrophySetupDialogTerm)
+BRIDGE_IMPL(scePhotoImportDialogAbort)
+BRIDGE_IMPL(scePhotoImportDialogGetResult)
+BRIDGE_IMPL(scePhotoImportDialogGetStatus)
+BRIDGE_IMPL(scePhotoImportDialogInit)
+BRIDGE_IMPL(scePhotoImportDialogTerm)
+BRIDGE_IMPL(scePhotoReviewDialogAbort)
+BRIDGE_IMPL(scePhotoReviewDialogGetResult)
+BRIDGE_IMPL(scePhotoReviewDialogGetStatus)
+BRIDGE_IMPL(scePhotoReviewDialogInit)
+BRIDGE_IMPL(scePhotoReviewDialogTerm)
+BRIDGE_IMPL(scePspSaveDataDialogContinue)
+BRIDGE_IMPL(scePspSaveDataDialogGetResult)
+BRIDGE_IMPL(scePspSaveDataDialogInit)
+BRIDGE_IMPL(scePspSaveDataDialogTerm)
+BRIDGE_IMPL(sceRemoteOSKDialogAbort)
+BRIDGE_IMPL(sceRemoteOSKDialogGetResult)
+BRIDGE_IMPL(sceRemoteOSKDialogGetStatus)
+BRIDGE_IMPL(sceRemoteOSKDialogInit)
+BRIDGE_IMPL(sceRemoteOSKDialogTerm)
+BRIDGE_IMPL(sceSaveDataDialogAbort)
+BRIDGE_IMPL(sceSaveDataDialogContinue)
+BRIDGE_IMPL(sceSaveDataDialogFinish)
+BRIDGE_IMPL(sceSaveDataDialogGetResult)
+BRIDGE_IMPL(sceSaveDataDialogGetStatus)
+BRIDGE_IMPL(sceSaveDataDialogGetSubStatus)
+BRIDGE_IMPL(sceSaveDataDialogInit)
+BRIDGE_IMPL(sceSaveDataDialogProgressBarInc)
+BRIDGE_IMPL(sceSaveDataDialogProgressBarSetValue)
+BRIDGE_IMPL(sceSaveDataDialogSubClose)
+BRIDGE_IMPL(sceSaveDataDialogTerm)
+BRIDGE_IMPL(sceStoreCheckoutDialogAbort)
+BRIDGE_IMPL(sceStoreCheckoutDialogGetResult)
+BRIDGE_IMPL(sceStoreCheckoutDialogGetStatus)
+BRIDGE_IMPL(sceStoreCheckoutDialogInit)
+BRIDGE_IMPL(sceStoreCheckoutDialogTerm)
+BRIDGE_IMPL(sceTwDialogAbort)
+BRIDGE_IMPL(sceTwDialogGetResult)
+BRIDGE_IMPL(sceTwDialogGetStatus)
+BRIDGE_IMPL(sceTwDialogInit)
+BRIDGE_IMPL(sceTwDialogTerm)
+BRIDGE_IMPL(sceTwLoginDialogAbort)
+BRIDGE_IMPL(sceTwLoginDialogGetResult)
+BRIDGE_IMPL(sceTwLoginDialogGetStatus)
+BRIDGE_IMPL(sceTwLoginDialogTerm)
+BRIDGE_IMPL(sceVideoImportDialogAbort)
+BRIDGE_IMPL(sceVideoImportDialogGetResult)
+BRIDGE_IMPL(sceVideoImportDialogGetStatus)
+BRIDGE_IMPL(sceVideoImportDialogInit)
+BRIDGE_IMPL(sceVideoImportDialogTerm)

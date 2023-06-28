@@ -22,6 +22,7 @@
 #include <gui/functions.h>
 
 #include <config/state.h>
+#include <io/functions.h>
 #include <io/vfs.h>
 
 #include <util/log.h>
@@ -82,7 +83,7 @@ bool init_manual(GuiState &gui, EmuEnvState &emuenv, const std::string &app_path
     height_manual_pages.clear();
 
     const auto APP_INDEX = get_app_index(gui, app_path);
-    const auto APP_PATH{ emuenv.pref_path / "ux0/app" / app_path };
+    const auto APP_PATH{ fs::path(emuenv.pref_path) / convert_path(app_path) };
     auto manual_path{ fs::path("sce_sys/manual/") };
 
     const auto lang = fmt::format("{:0>2d}", emuenv.cfg.sys_lang);
@@ -94,9 +95,8 @@ bool init_manual(GuiState &gui, EmuEnvState &emuenv, const std::string &app_path
         for (const auto &manual : fs::directory_iterator(APP_PATH / manual_path)) {
             if (manual.path().extension() == ".png") {
                 const auto page_path = manual_path / manual.path().filename().string();
-
                 vfs::FileBuffer buffer;
-                vfs::read_app_file(buffer, emuenv.pref_path.wstring(), app_path, page_path);
+                vfs::read_app_file(buffer, emuenv.pref_path, app_path, page_path);
 
                 if (buffer.empty()) {
                     LOG_WARN("Manual not found for title: {} [{}].", app_path, APP_INDEX->title);
@@ -152,9 +152,9 @@ void draw_manual(GuiState &gui, EmuEnvState &emuenv) {
 
     // Set scroll with mouse wheel or keyboard up/down keys
     const auto wheel_counter = ImGui::GetIO().MouseWheel;
-    if ((wheel_counter == 1.f) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_leftstick_up)))
+    if ((wheel_counter == 1.f) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_leftstick_up))
         scroll -= std::min(40.f * SCALE.y, scroll);
-    else if ((wheel_counter == -1.f) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_leftstick_down)))
+    else if ((wheel_counter == -1.f) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_leftstick_down))
         scroll += std::min(40.f * SCALE.y, max_scroll - scroll);
 
     // Set scroll y position
@@ -176,7 +176,7 @@ void draw_manual(GuiState &gui, EmuEnvState &emuenv) {
 
     // Draw esc button
     ImGui::SetCursorPos(ImVec2(5.0f * SCALE.x, 10.0f * SCALE.y));
-    if ((!hidden_button && ImGui::Button("Esc", BUTTON_SIZE)) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_psbutton)))
+    if ((!hidden_button && ImGui::Button("Esc", BUTTON_SIZE)) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_psbutton))
         gui::close_system_app(gui, emuenv);
 
     // Draw manual scroll bar when is available
@@ -191,7 +191,7 @@ void draw_manual(GuiState &gui, EmuEnvState &emuenv) {
     // Draw left button
     if (current_page > 0) {
         ImGui::SetCursorPos(ImVec2(5.0f * SCALE.x, display_size.y - (40.0f * SCALE.y)));
-        if ((!hidden_button && ImGui::Button("<", BUTTON_SIZE)) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_leftstick_left))) {
+        if ((!hidden_button && ImGui::Button("<", BUTTON_SIZE)) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_leftstick_left)) {
             --current_page;
             scroll = 0.f;
         }
@@ -225,7 +225,7 @@ void draw_manual(GuiState &gui, EmuEnvState &emuenv) {
     // Draw right button
     if (current_page < (int)gui.manuals.size() - 1) {
         ImGui::SetCursorPos(ImVec2(display_size.x - (70.f * SCALE.x), display_size.y - (40.0f * SCALE.y)));
-        if ((!hidden_button && ImGui::Button(">", BUTTON_SIZE)) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_leftstick_right))) {
+        if ((!hidden_button && ImGui::Button(">", BUTTON_SIZE)) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_leftstick_right)) {
             scroll = 0.f;
             ++current_page;
         }

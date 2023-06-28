@@ -125,7 +125,7 @@ static bool load_trophy_progress(IOState &io, const SceUID &progress_input_file,
 static std::string np_com_id_sort;
 
 void init_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
-    const auto TROPHY_PATH{ emuenv.pref_path / "ux0/user" / emuenv.io.user_id / "trophy" };
+    const auto TROPHY_PATH{ fs::path(emuenv.pref_path) / "ux0/user" / emuenv.io.user_id / "trophy" };
     const auto TROPHY_CONF_PATH = TROPHY_PATH / "conf";
 
     gui.trophy_np_com_id_list_icons.clear(), np_com_id_info.clear(), np_com_id_list.clear();
@@ -151,7 +151,7 @@ void init_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
 
                 // Open trophy progress file
                 const auto trophy_progress_save_file = device::construct_normalized_path(VitaIoDevice::ux0, "user/" + emuenv.io.user_id + "/trophy/data/" + np_com_id + "/TROPUSR.DAT");
-                const auto progress_input_file = open_file(emuenv.io, trophy_progress_save_file.c_str(), SCE_O_RDONLY, emuenv.pref_path.wstring(), "load_trophy_progress_file");
+                const auto progress_input_file = open_file(emuenv.io, trophy_progress_save_file.c_str(), SCE_O_RDONLY, emuenv.pref_path, "load_trophy_progress_file");
 
                 if (!load_trophy_progress(emuenv.io, progress_input_file, np_com_id)) {
                     LOG_ERROR("Fail load trophy progress for Np Com ID: {}, clean trophy file.", np_com_id);
@@ -236,7 +236,7 @@ void init_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
                     int32_t height = 0;
                     vfs::FileBuffer buffer;
 
-                    vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path.wstring(), "user/" + emuenv.io.user_id + "/trophy/conf/" + np_com_id + "/" + group.second);
+                    vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path, "user/" + emuenv.io.user_id + "/trophy/conf/" + np_com_id + "/" + group.second);
 
                     if (buffer.empty()) {
                         LOG_WARN("Icon: '{}', Not found for NPComId: {}.", group.second, np_com_id);
@@ -285,7 +285,7 @@ static std::vector<TrophySort> trophy_list;
 static std::string trophy_sort;
 
 static void get_trophy_list(GuiState &gui, EmuEnvState &emuenv, const std::string &np_com_id, const std::string &group_id) {
-    const auto trophy_conf_id_path{ emuenv.pref_path / "ux0/user" / emuenv.io.user_id / "trophy/conf" / np_com_id };
+    const auto trophy_conf_id_path{ fs::path(emuenv.pref_path) / "ux0/user" / emuenv.io.user_id / "trophy/conf" / np_com_id };
     if (fs::is_empty(trophy_conf_id_path)) {
         LOG_WARN("Trophy conf path is empty");
         return;
@@ -318,7 +318,7 @@ static void get_trophy_list(GuiState &gui, EmuEnvState &emuenv, const std::strin
         const std::string trophy_id = trophy.first;
         const std::string icon_name = fmt::format("TROP{}.PNG", trophy_id);
 
-        vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path.wstring(), "user/" + emuenv.io.user_id + "/trophy/conf/" + np_com_id + "/" + icon_name);
+        vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path, "user/" + emuenv.io.user_id + "/trophy/conf/" + np_com_id + "/" + icon_name);
         if (buffer.empty()) {
             LOG_WARN("Trophy icon, Name: '{}', Not found for trophy id: {}.", icon_name, trophy.first);
             continue;
@@ -407,9 +407,9 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
     const auto SIZE_INFO = ImVec2(820.f * SCALE.x, 484.f * SCALE.y);
     const auto POPUP_SIZE = ImVec2(756.0f * SCALE.x, 436.0f * SCALE.y);
 
-    const auto TROPHY_PATH{ emuenv.pref_path / "ux0/user" / emuenv.io.user_id / "trophy" };
+    const auto TROPHY_PATH{ fs::path(emuenv.pref_path) / "ux0/user" / emuenv.io.user_id / "trophy" };
 
-    const auto is_background = gui.apps_background.contains("NPXS10008");
+    const auto is_background = gui.apps_background.find("vs0:app/NPXS10008") != gui.apps_background.end();
     const auto is_12_hour_format = emuenv.cfg.sys_time_format == SCE_SYSTEM_PARAM_TIME_FORMAT_12HOUR;
 
     ImGui::SetNextWindowPos(WINDOW_POS, ImGuiCond_Always);
@@ -425,7 +425,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
     if (is_background)
         draw_list->AddImage(gui.apps_background["NPXS10008"], VIEWPORT_POS, BG_POS_MAX);
     else
-        draw_list->AddRectFilled(VIEWPORT_POS, BG_POS_MAX, IM_COL32(31.f, 12.f, 0.f, 255.f), 0.f, ImDrawFlags_RoundCornersAll);
+        draw_list->AddRectFilled(VIEWPORT_POS, BG_POS_MAX, IM_COL32(31.f, 12.f, 0.f, 255.f), 0.f, ImDrawCornerFlags_All);
 
     auto lang = gui.lang.trophy_collection;
     auto common = emuenv.common_dialog.lang.common;
@@ -473,7 +473,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
                 ImGui::BeginChild("##trophy_delete_child", POPUP_SIZE, true, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.f * SCALE.x);
                 const ImVec2 ICON_POS(48.f * SCALE.x, 28.f * SCALE.y);
-                if (gui.trophy_np_com_id_list_icons[delete_np_com_id].contains("000")) {
+                if (gui.trophy_np_com_id_list_icons[delete_np_com_id].find("000") != gui.trophy_np_com_id_list_icons[delete_np_com_id].end()) {
                     ImGui::SetCursorPos(ICON_POS);
                     ImGui::Image(gui.trophy_np_com_id_list_icons[delete_np_com_id]["000"], SIZE_ICON_LIST);
                 }
@@ -491,10 +491,10 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
                 ImGui::TextColored(GUI_COLOR_TEXT, "%s", delete_str);
                 ImGui::PopTextWrapPos();
                 ImGui::SetCursorPos(ImVec2((POPUP_SIZE.x / 2) - (BUTTON_SIZE.x + (20.f * SCALE.x)), POPUP_SIZE.y - BUTTON_SIZE.y - (22.0f * SCALE.y)));
-                if (ImGui::Button(common["cancel"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_circle)))
+                if (ImGui::Button(common["cancel"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_circle))
                     delete_np_com_id.clear();
                 ImGui::SameLine(0, 20.f * SCALE.x);
-                if (ImGui::Button(common["ok"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_cross))) {
+                if (ImGui::Button(common["ok"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_cross)) {
                     fs::remove_all(TROPHY_PATH / "conf" / delete_np_com_id);
                     fs::remove_all(TROPHY_PATH / "data" / delete_np_com_id);
                     const auto np_com_id_index = std::find_if(np_com_id_list.begin(), np_com_id_list.end(), [&](const NPComIdSort &np_com) {
@@ -520,7 +520,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
                 ImGui::PushID(np_com.id.c_str());
                 if (!search_bar.PassFilter(np_com.name.c_str()))
                     continue;
-                if (gui.trophy_np_com_id_list_icons[np_com.id].contains("000"))
+                if (gui.trophy_np_com_id_list_icons[np_com.id].find("000") != gui.trophy_np_com_id_list_icons[np_com.id].end())
                     ImGui::Image(gui.trophy_np_com_id_list_icons[np_com.id]["000"], SIZE_ICON_LIST);
                 ImGui::NextColumn();
                 ImGui::SetWindowFontScale(1.3f * RES_SCALE.x);
@@ -564,7 +564,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
         } else {
             // Select Group ID
             if (group_id_selected.empty()) {
-                if (gui.trophy_np_com_id_list_icons[np_com_id_selected].contains("000"))
+                if (gui.trophy_np_com_id_list_icons[np_com_id_selected].find("000") != gui.trophy_np_com_id_list_icons[np_com_id_selected].end())
                     ImGui::Image(gui.trophy_np_com_id_list_icons[np_com_id_selected]["000"], SIZE_ICON_LIST);
                 ImGui::SameLine();
                 ImGui::SetWindowFontScale(1.3f * RES_SCALE.x);
@@ -582,7 +582,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
                     ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + (10.f * SCALE.x) - (ImGui::CalcTextSize("+").x / 2.f), ImGui::GetCursorPosY() + (SIZE_ICON_LIST.y / 2.f) - (ImGui::CalcTextSize("+").y / 2.f)));
                     ImGui::TextColored(GUI_COLOR_TEXT, "%s", group_id != "000" ? "+" : "");
                     ImGui::NextColumn();
-                    if (gui.trophy_np_com_id_list_icons[np_com_id_selected].contains(group_id))
+                    if (gui.trophy_np_com_id_list_icons[np_com_id_selected].find(group_id) != gui.trophy_np_com_id_list_icons[np_com_id_selected].end())
                         ImGui::Image(gui.trophy_np_com_id_list_icons[np_com_id_selected][group_id], SIZE_ICON_LIST);
                     ImGui::NextColumn();
                     ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.f, 0.2f));
@@ -616,7 +616,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
                 // Detail of Np Com ID
             } else if (detail_np_com_id) {
                 ImGui::SetWindowFontScale(1.5f * RES_SCALE.x);
-                if (gui.trophy_np_com_id_list_icons[np_com_id_selected].contains(group_id_selected == "global" ? "000" : group_id_selected))
+                if (gui.trophy_np_com_id_list_icons[np_com_id_selected].find(group_id_selected == "global" ? "000" : group_id_selected) != gui.trophy_np_com_id_list_icons[np_com_id_selected].end())
                     ImGui::Image(gui.trophy_np_com_id_list_icons[np_com_id_selected][group_id_selected == "global" ? "000" : group_id_selected], SIZE_ICON_LIST);
                 const auto CALC_NAME = ImGui::CalcTextSize(np_com_id_info[np_com_id_selected].name[group_id_selected == "global" ? "000" : group_id_selected].c_str(), nullptr, false, SIZE_INFO.x - SIZE_ICON_LIST.x - 48.f).y / 2.f;
                 ImGui::SetCursorPos(ImVec2(SIZE_ICON_LIST.x + 20.f, (SIZE_ICON_LIST.y / 2.f) - CALC_NAME));
@@ -653,7 +653,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
                 ImGui::PopTextWrapPos();
                 // Select Trophy
             } else if (trophy_id_selected.empty()) {
-                if (gui.trophy_np_com_id_list_icons[np_com_id_selected].contains(group_id_selected))
+                if (gui.trophy_np_com_id_list_icons[np_com_id_selected].find(group_id_selected) != gui.trophy_np_com_id_list_icons[np_com_id_selected].end())
                     ImGui::Image(gui.trophy_np_com_id_list_icons[np_com_id_selected][group_id_selected], SIZE_ICON_LIST);
                 ImGui::SameLine();
                 ImGui::SetWindowFontScale(1.6f * RES_SCALE.x);
@@ -745,7 +745,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
 
     // Back
     ImGui::SetCursorPos(ImVec2(8.f * SCALE.x, WINDOW_SIZE.y - (52.f * SCALE.y)));
-    if (ImGui::Button("Back", ImVec2(64.f * SCALE.x, 40.f * SCALE.y)) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_circle))) {
+    if (ImGui::Button("Back", ImVec2(64.f * SCALE.x, 40.f * SCALE.y)) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_circle)) {
         if (!np_com_id_selected.empty()) {
             if (detail_np_com_id) {
                 detail_np_com_id = false;
@@ -775,7 +775,7 @@ void draw_trophy_collection(GuiState &gui, EmuEnvState &emuenv) {
     // Sort
     if (trophy_id_selected.empty() && !detail_np_com_id && (np_com_id_selected.empty() || !group_id_selected.empty())) {
         ImGui::SetCursorPos(ImVec2(WINDOW_SIZE.x - (70.f * SCALE.x), WINDOW_SIZE.y - (52.f * SCALE.y)));
-        if (ImGui::Button("...", ImVec2(64.f * SCALE.x, 40.f * SCALE.y)) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_triangle)))
+        if (ImGui::Button("...", ImVec2(64.f * SCALE.x, 40.f * SCALE.y)) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_triangle))
             ImGui::OpenPopup("...");
         if (ImGui::BeginPopup("...", ImGuiWindowFlags_NoMove)) {
             ImGui::TextColored(GUI_COLOR_TEXT_TITLE, "%s", lang["sort"].c_str());

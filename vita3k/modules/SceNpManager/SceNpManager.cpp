@@ -15,8 +15,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <module/module.h>
-
+#include "SceNpManager.h"
 #include "util/types.h"
 
 #include <io/state.h>
@@ -29,18 +28,6 @@
 
 #include <util/tracy.h>
 TRACY_MODULE_NAME(SceNpManager);
-
-#define SCE_NP_ERROR_ALREADY_INITIALIZED 0x80550001
-#define SCE_NP_ERROR_NOT_INITIALIZED 0x80550002
-#define SCE_NP_ERROR_INVALID_ARGUMENT 0x80550003
-#define SCE_NP_ERROR_UNKNOWN_PLATFORM_TYPE 0x80550004
-#define SCE_NP_MANAGER_ERROR_ABORTED 0x80550507
-#define SCE_NP_MANAGER_ERROR_ALREADY_INITIALIZED 0x80550501
-#define SCE_NP_MANAGER_ERROR_OUT_OF_MEMORY 0x80550504
-#define SCE_NP_MANAGER_ERROR_NOT_INITIALIZED 0x80550502
-#define SCE_NP_MANAGER_ERROR_INVALID_ARGUMENT 0x80550503
-#define SCE_NP_MANAGER_ERROR_INVALID_STATE 0x80550506
-#define SCE_NP_MANAGER_ERROR_ID_NOT_AVAIL 0x80550509
 
 EXPORT(int, sceNpAuthAbortOAuthRequest) {
     TRACY_FUNC(sceNpAuthAbortOAuthRequest);
@@ -167,3 +154,43 @@ EXPORT(int, sceNpUnregisterServiceStateCallback) {
     }
     return 0;
 }
+
+EXPORT(int, SceNpManager_B24FC028) {
+    TRACY_FUNC(SceNpManager_B24FC028);
+    return UNIMPLEMENTED();
+}
+
+EXPORT(int, SceNpManager_CFAEB050) {
+    TRACY_FUNC(SceNpManager_CFAEB050);
+    return UNIMPLEMENTED();
+}
+
+EXPORT(int, SceNpManager_E45E4003) {
+    TRACY_FUNC(SceNpManager_E45E4003);
+    return UNIMPLEMENTED();
+}
+
+EXPORT(int, SceNpCommon_A385C8CD) {
+    TRACY_FUNC(SceNpCommon_A385C8CD);
+    return UNIMPLEMENTED();
+}
+
+BRIDGE_IMPL(sceNpAuthAbortOAuthRequest)
+BRIDGE_IMPL(sceNpAuthCreateOAuthRequest)
+BRIDGE_IMPL(sceNpAuthDeleteOAuthRequest)
+BRIDGE_IMPL(sceNpAuthGetAuthorizationCode)
+BRIDGE_IMPL(sceNpCheckCallback)
+BRIDGE_IMPL(sceNpGetServiceState)
+BRIDGE_IMPL(sceNpInit)
+BRIDGE_IMPL(sceNpManagerGetAccountRegion)
+BRIDGE_IMPL(sceNpManagerGetCachedParam)
+BRIDGE_IMPL(sceNpManagerGetChatRestrictionFlag)
+BRIDGE_IMPL(sceNpManagerGetContentRatingFlag)
+BRIDGE_IMPL(sceNpManagerGetNpId)
+BRIDGE_IMPL(sceNpRegisterServiceStateCallback)
+BRIDGE_IMPL(sceNpTerm)
+BRIDGE_IMPL(sceNpUnregisterServiceStateCallback)
+BRIDGE_IMPL(SceNpManager_B24FC028)
+BRIDGE_IMPL(SceNpManager_CFAEB050)
+BRIDGE_IMPL(SceNpManager_E45E4003)
+BRIDGE_IMPL(SceNpCommon_A385C8CD)

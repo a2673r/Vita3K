@@ -67,12 +67,12 @@ static bool init_notice_icon(GuiState &gui, EmuEnvState &emuenv, const fs::path 
     int32_t height = 0;
     vfs::FileBuffer buffer;
 
-    if (!vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path.wstring(), content_path)) {
+    if (!vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path, content_path)) {
         if (info.type == "trophy") {
             LOG_WARN("Icon no found for trophy id: {} on NpComId: {}", info.content_id, info.id);
             return false;
         } else {
-            if (!vfs::read_app_file(buffer, emuenv.pref_path.wstring(), info.id, "sce_sys/icon0.png")) {
+            if (!vfs::read_app_file(buffer, emuenv.pref_path, "ux0:app/" + info.id, "sce_sys/icon0.png")) {
                 buffer = init_default_icon(gui, emuenv);
                 if (buffer.empty()) {
                     LOG_WARN("Not found defaut icon for this notice content: {}", info.content_id);
@@ -89,7 +89,7 @@ static bool init_notice_icon(GuiState &gui, EmuEnvState &emuenv, const fs::path 
     gui.notice_info_icon[info.time].init(gui.imgui_state.get(), data, width, height);
     stbi_image_free(data);
 
-    return gui.notice_info_icon.contains(info.time);
+    return gui.notice_info_icon.find(info.time) != gui.notice_info_icon.end();
 }
 
 static bool set_notice_info(GuiState &gui, EmuEnvState &emuenv, const NoticeList &info) {
@@ -111,7 +111,7 @@ static bool set_notice_info(GuiState &gui, EmuEnvState &emuenv, const NoticeList
             msg = lang["install_complete"];
         }
         vfs::FileBuffer params;
-        if (vfs::read_file(VitaIoDevice::ux0, params, emuenv.pref_path.wstring(), content_path / "sce_sys/param.sfo")) {
+        if (vfs::read_file(VitaIoDevice::ux0, params, emuenv.pref_path, content_path / "sce_sys/param.sfo")) {
             SfoFile sfo_handle;
             sfo::load(sfo_handle, params);
             if (!sfo::get_data_by_key(name, sfo_handle, fmt::format("TITLE_{:0>2d}", emuenv.cfg.sys_lang)))
@@ -139,7 +139,7 @@ static bool set_notice_info(GuiState &gui, EmuEnvState &emuenv, const NoticeList
         default: break;
         }
 
-        const auto trophy_conf_id_path{ emuenv.pref_path / "ux0/user" / emuenv.io.user_id / "trophy/conf" / info.id };
+        const auto trophy_conf_id_path{ fs::path(emuenv.pref_path) / "ux0/user" / emuenv.io.user_id / "trophy/conf" / info.id };
         const std::string sfm_name = fs::exists(trophy_conf_id_path / fmt::format("TROP_{:0>2d}.SFM", emuenv.cfg.sys_lang)) ? fmt::format("TROP_{:0>2d}.SFM", emuenv.cfg.sys_lang) : "TROP.SFM";
 
         pugi::xml_document doc;
@@ -205,7 +205,7 @@ void get_notice_list(EmuEnvState &emuenv) {
     notice_list.clear();
     notice_list_count_new.clear();
     notice_list_new.clear();
-    const auto notice_path{ emuenv.pref_path / "ux0/user/notice.xml" };
+    const auto notice_path{ fs::path(emuenv.pref_path) / "ux0/user/notice.xml" };
 
     if (fs::exists(notice_path)) {
         pugi::xml_document notice_xml;
@@ -264,7 +264,7 @@ void save_notice_list(EmuEnvState &emuenv) {
         }
     }
 
-    const auto notice_path{ emuenv.pref_path / "ux0/user/notice.xml" };
+    const auto notice_path{ fs::path(emuenv.pref_path) / "ux0/user/notice.xml" };
     const auto save_xml = notice_xml.save_file(notice_path.c_str());
     if (!save_xml)
         LOG_ERROR("Fail save xml");
@@ -411,7 +411,7 @@ static void draw_notice_info(GuiState &gui, EmuEnvState &emuenv) {
                 if (notice.time != notice_info.front().time)
                     ImGui::Separator();
                 const auto ICON_POS = ImGui::GetCursorPos();
-                if (gui.notice_info_icon.contains(notice.time)) {
+                if (gui.notice_info_icon.find(notice.time) != gui.notice_info_icon.end()) {
                     ImGui::SetCursorPos(ImVec2(ICON_POS.x + (ImGui::GetColumnWidth() / 2.f) - (ICON_SIZE.x / 2.f), ICON_POS.y + (SELECT_SIZE.y / 2.f) - (ICON_SIZE.y / 2.f)));
                     ImGui::Image(gui.notice_info_icon[notice.time], ICON_SIZE);
                 }
@@ -428,11 +428,11 @@ static void draw_notice_info(GuiState &gui, EmuEnvState &emuenv) {
                     save_notice_list(emuenv);
                     if (notice.type == "content") {
                         if (notice.group == "theme")
-                            pre_load_app(gui, emuenv, false, "NPXS10015");
+                            pre_load_app(gui, emuenv, false, "vs0:app/NPXS10015");
                         else
-                            pre_load_app(gui, emuenv, emuenv.cfg.show_live_area_screen, notice.id);
+                            pre_load_app(gui, emuenv, emuenv.cfg.show_live_area_screen, "ux0:app/" +  notice.id);
                     } else {
-                        pre_load_app(gui, emuenv, false, "NPXS10008");
+                        pre_load_app(gui, emuenv, false, "vs0:app/NPXS10008");
                         open_trophy_unlocked(gui, emuenv, notice.id, notice.content_id);
                     }
                     notice_info_state = false;
@@ -465,7 +465,7 @@ static void draw_notice_info(GuiState &gui, EmuEnvState &emuenv) {
             ImGui::SetWindowFontScale(1.f * RES_SCALE.x);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.f * SCALE.x);
             ImGui::SetCursorPos(ImVec2(VIEWPORT_SIZE.x - (70.f * SCALE.x), VIEWPORT_SIZE.y - (52.f * SCALE.y)));
-            if (ImGui::Button("...", ImVec2(64.f * SCALE.x, 40.f * SCALE.y)) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_triangle)))
+            if (ImGui::Button("...", ImVec2(64.f * SCALE.x, 40.f * SCALE.y)) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_triangle))
                 ImGui::OpenPopup("...");
             if (ImGui::BeginPopup("...", ImGuiWindowFlags_NoMove)) {
                 if (ImGui::Button(lang["delete_all"].c_str()))
@@ -480,11 +480,11 @@ static void draw_notice_info(GuiState &gui, EmuEnvState &emuenv) {
                     ImGui::SetCursorPos(ImVec2((DELETE_POPUP_SIZE.x / 2.f) - (ImGui::CalcTextSize(notif_deleted).x / 2.f), (DELETE_POPUP_SIZE.y / 2.f) - (46.f * SCALE.y)));
                     ImGui::TextColored(GUI_COLOR_TEXT, "%s", notif_deleted);
                     ImGui::SetCursorPos(ImVec2((DELETE_POPUP_SIZE.x / 2) - (BUTTON_SIZE.x + (20.f * SCALE.x)), DELETE_POPUP_SIZE.y - BUTTON_SIZE.y - (24.0f * SCALE.y)));
-                    if (ImGui::Button(common["cancel"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_circle))) {
+                    if (ImGui::Button(common["cancel"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_circle)) {
                         ImGui::CloseCurrentPopup();
                     }
                     ImGui::SameLine(0.f, 20.f);
-                    if (ImGui::Button(common["ok"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(static_cast<ImGuiKey>(emuenv.cfg.keyboard_button_cross))) {
+                    if (ImGui::Button(common["ok"].c_str(), BUTTON_SIZE) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_cross)) {
                         notice_info.clear();
                         for (auto &notice : gui.notice_info_icon)
                             notice.second = {};
@@ -617,7 +617,7 @@ void draw_information_bar(GuiState &gui, EmuEnvState &emuenv) {
     draw_list->AddRectFilled(ImVec2(VIEWPORT_POS.x + INFO_BAR_SIZE.x - (54.f * SCALE.x) - is_notif_pos, VIEWPORT_POS.y + (12.f * SCALE.y)), ImVec2(VIEWPORT_POS.x + INFO_BAR_SIZE.x - (50.f * SCALE.x) - is_notif_pos, VIEWPORT_POS.y + (20 * SCALE.y)), IM_COL32(81.f, 169.f, 32.f, 255.f));
     draw_list->AddRectFilled(ImVec2(VIEWPORT_POS.x + INFO_BAR_SIZE.x - (50.f * SCALE.x) - is_notif_pos, VIEWPORT_POS.y + (5.f * SCALE.y)), ImVec2(VIEWPORT_POS.x + INFO_BAR_SIZE.x - (12.f * SCALE.x) - is_notif_pos, VIEWPORT_POS.y + (27 * SCALE.y)), IM_COL32(81.f, 169.f, 32.f, 255.f), 2.f * SCALE.x, ImDrawFlags_RoundCornersAll);
 
-    if (emuenv.display.imgui_render && !gui.vita_area.start_screen && !gui.vita_area.live_area_screen && !gui.vita_area.user_management && !gui.help_menu.vita3k_update && get_sys_apps_state(gui) && (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) || ImGui::IsItemClicked(0)))
+    if (emuenv.display.imgui_render && !gui.vita_area.start_screen && !gui.vita_area.live_area_screen && !gui.help_menu.vita3k_update && get_sys_apps_state(gui) && (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) || ImGui::IsItemClicked(0)))
         gui.vita_area.information_bar = false;
 
     if (is_notif_pos)

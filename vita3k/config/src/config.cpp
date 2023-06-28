@@ -118,12 +118,12 @@ ExitCode serialize_config(Config &cfg, const fs::path &output_path) {
 ExitCode init_config(Config &cfg, int argc, char **argv, const Root &root_paths) {
     // Always generate the default configuration file
     Config command_line{};
-    // Load config path configuration by default; otherwise, move the default to the config path
-    if (fs::exists(check_path(root_paths.get_config_path()))) {
-        parse(cfg, root_paths.get_config_path(), root_paths.get_pref_path());
-    } else {
-        serialize_config(command_line, check_path(root_paths.get_config_path()));
-    }
+    serialize_config(command_line, root_paths.get_base_path() / "data/config/default.yml");
+    // Load base path configuration by default; otherwise, move the default to the base path
+    if (fs::exists(check_path(root_paths.get_base_path())))
+        parse(cfg, root_paths.get_base_path(), root_paths.get_base_path());
+    else
+        fs::copy(root_paths.get_base_path() / "data/config/default.yml", root_paths.get_base_path() / "config.yml");
 
     // Declare all options
     CLI::App app{ "Vita3K Command Line Interface" }; // "--help,-h" is automatically generated
@@ -137,35 +137,35 @@ ExitCode init_config(Config &cfg, int argc, char **argv, const Root &root_paths)
         ->group("Options");
 
     // Positional options
-    app.add_option("content-path", command_line.content_path, "Path to the app with a .vpk/.zip extension or folder of content to install & run")
+    app.add_option("content-path", command_line.content_path, "Path of app in .vpk/.zip or folder of content to install & run")
         ->default_str({});
-
     // Grouped options
     auto input = app.add_option_group("Input", "Special options for Vita3K");
-    input->add_flag("--console,-z", command_line.console, "Start the emulator in console mode.")
+    input->add_option("--console,-z", command_line.console, "Starts the emulator in fullscreen mode.")
        ->default_val(false)->group("Input");
+    input->add_option("--app-device,-D", command_line.app_device, "App device")
+        ->default_val("ux0")->group("Input");
     input->add_option("--app-args,-Z", command_line.app_args, "Argument for app, use ', ' to separate arguments.")
         ->default_str("")->group("Input");
     input->add_option("--load-app-list,-a", command_line.load_app_list, "Starts the emulator with load app list.")
        ->default_val(false)->group("Input");
     input->add_option("--self,-S", command_line.self_path, "Path to the self to run inside Title ID")
         ->default_str("eboot.bin")->group("Input");
-    input->add_option("--installed-path,-r", command_line.run_app_path, "Path to the installed app to run")
-        ->default_str({})->check(CLI::IsMember(get_file_set(fs::path(cfg.pref_path) / "ux0/app")))->group("Input");
+    input->add_option("--installed-path,-r", command_line.run_app_path, "Path of installed app to run")
+            ->default_str({})->group("Input");
     input->add_option("--recompile-shader,-s", command_line.recompile_shader_path, "Recompile the given PS Vita shader (GXP format) to SPIR_V / GLSL and quit")
         ->default_str({})->group("Input");
     input->add_option("--deleted-id,-d", command_line.delete_title_id, "Title ID of installed app to delete")
         ->default_str({})->check(CLI::IsMember(get_file_set(fs::path(cfg.pref_path) / "ux0/app")))->group("Input");
-    input->add_option("--firmware", command_line.pup_path, "Path to the firmware file (.pup extension) to install");
-    auto input_pkg = input->add_option("--pkg", command_line.pkg_path, "Path to the app file (.pkg extension) to install")
+    auto input_pkg = input->add_option("--pkg", command_line.pkg_path, "Path of app (in .pkg format) to install")
         ->default_str({})->group("Input");
-    auto input_zrif = input->add_option("--zrif", command_line.pkg_zrif, "zrif to decode the app (base64 format)")
+    auto input_zrif = input->add_option("--zrif", command_line.pkg_zrif, "zrif for the app (in .pkg format)")
         ->default_str({})->group("Input");
     input_pkg->needs(input_zrif);
     input_zrif->needs(input_pkg);
 
     auto config = app.add_option_group("Configuration", "Modify Vita3K's config.yml file");
-    config->add_flag("--" + cfg[e_archive_log] + ",-A", command_line.archive_log, "Make a duplicate of the log file with TITLE_ID and Game ID as title")
+    config->add_flag("--" + cfg[e_archive_log] + ",-A", command_line.archive_log, "Makes a duplicate of the log file with TITLE_ID and Game ID as title")
         ->group("Logging");
     config->add_option("--" + cfg[e_backend_renderer] + ",-B", command_line.backend_renderer, "Renderer backend to use")
         ->ignore_case()->check(CLI::IsMember(std::set<std::string>{ "OpenGL", "Vulkan" }))->group("Vita Emulation");
@@ -177,7 +177,7 @@ ExitCode init_config(Config &cfg, int argc, char **argv, const Root &root_paths)
         ->group("YML");
     config->add_flag("--load-config,-f", command_line.load_config, "Load a configuration file. Setting --keep-config with this option preserves the configuration file.")
         ->group("YML");
-    config->add_flag("--fullscreen,-F", command_line.fullscreen, "Start the emulator in fullscreen mode.")
+    config->add_flag("--fullscreen,-F", command_line.fullscreen, "Starts the emulator in fullscreen mode.")
         ->group("YML");
 
     std::vector<std::string> lle_modules{};
@@ -210,6 +210,22 @@ ExitCode init_config(Config &cfg, int argc, char **argv, const Root &root_paths)
         return QuitRequested;
     }
 
+    if (command_line.run_app_path.has_value()) {
+        const std::string app_path = command_line.run_app_path.value();
+        if ((app_path != "NPXS10062") && (app_path != "vsh/shell")) {
+            std::set<std::string> exist_apps = get_file_set(fs::path(cfg.pref_path) / command_line.app_device / "app");
+            if (exist_apps.find(app_path) == exist_apps.end()) {
+                std::cout << "--installed-path: " << app_path << " no in {";
+                for (auto &app : exist_apps) {
+                    std::cout << app;
+                    if (app != *exist_apps.rbegin())
+                        std::cout << ", ";
+                }
+                std::cout << "}\n";
+                return InitConfigFailed;
+            }
+        }
+    }
     if (command_line.recompile_shader_path.has_value()) {
         cfg.recompile_shader_path = std::move(command_line.recompile_shader_path);
         return QuitRequested;
@@ -218,20 +234,16 @@ ExitCode init_config(Config &cfg, int argc, char **argv, const Root &root_paths)
         cfg.delete_title_id = std::move(command_line.delete_title_id);
         return QuitRequested;
     }
-    if (command_line.pup_path.has_value()) {
-        cfg.pup_path = std::move(command_line.pup_path);
-        return QuitRequested;
-    }
     if (command_line.pkg_path.has_value() && command_line.pkg_zrif.has_value()) {
         cfg.pkg_path = std::move(command_line.pkg_path);
         cfg.pkg_zrif = std::move(command_line.pkg_zrif);
         return QuitRequested;
     }
-    if (command_line.load_config || command_line.config_path != root_paths.get_config_path()) {
+    if (command_line.load_config || command_line.config_path != root_paths.get_base_path()) {
         if (command_line.config_path.empty()) {
-            command_line.config_path = root_paths.get_config_path();
+            command_line.config_path = root_paths.get_base_path();
         } else {
-            if (parse(command_line, command_line.config_path, root_paths.get_pref_path()) != Success)
+            if (parse(command_line, command_line.config_path, root_paths.get_base_path()) != Success)
                 return InitConfigFailed;
         }
     }
@@ -276,5 +288,37 @@ ExitCode init_config(Config &cfg, int argc, char **argv, const Root &root_paths)
 
     return Success;
 }
+
+#ifdef TRACY_ENABLE
+bool is_tracy_advanced_profiling_active_for_module(std::vector<std::string> &active_modules, const std::string &module, int *index) {
+    // If we dont care about the index that means that its getting executed from an export
+    // And because of that we know its sorted so we can use binary search so it
+    // doesn't hurt performance as a standard std::find, also we just care for the result
+    if (!index)
+        return std::binary_search(active_modules.begin(), active_modules.end(), module);
+
+    bool result = false;
+
+    // Retrieve index for module name in the list of enabled modules
+    auto iterator = std::find(active_modules.begin(), active_modules.end(), module);
+
+    // Check the index the iterator references to (`std::find()` returns `last` if no match was found)
+    if (iterator == active_modules.end()) {
+        // Return false if no match is found in the active modules vector
+        result = false;
+    } else {
+        // Return true if there was at least one match
+        result = true;
+    }
+
+    // If index is being requested and the module name was found
+    if (result) {
+        // Calculate the distance between the first element in the module and
+        *index = std::distance(active_modules.begin(), iterator);
+    }
+
+    return result;
+}
+#endif // TRACY_ENABLE
 
 } // namespace config

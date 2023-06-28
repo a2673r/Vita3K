@@ -15,7 +15,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <module/module.h>
+#include "SceCompat.h"
 
 EXPORT(int, sceCompatAllocCdramWithHole) {
     return UNIMPLEMENTED();
@@ -152,3 +152,44 @@ EXPORT(int, sceCompatWriteShared32) {
 EXPORT(int, sceCompatWriteSharedCtrl) {
     return UNIMPLEMENTED();
 }
+
+EXPORT(int, sceCompatVshGetPspSystemSoftwareVersion) {
+    STUBBED("return 661");
+    return 661;
+}
+
+BRIDGE_IMPL(sceCompatAllocCdramWithHole)
+BRIDGE_IMPL(sceCompatAvailableColorSpaceSetting)
+BRIDGE_IMPL(sceCompatCache)
+BRIDGE_IMPL(sceCompatCheckPocketStation)
+BRIDGE_IMPL(sceCompatDatRead)
+BRIDGE_IMPL(sceCompatFrameBufferInit)
+BRIDGE_IMPL(sceCompatGetCurrentSecureTick)
+BRIDGE_IMPL(sceCompatGetDevInf)
+BRIDGE_IMPL(sceCompatGetPeripheralState)
+BRIDGE_IMPL(sceCompatGetPrimaryHead)
+BRIDGE_IMPL(sceCompatGetPspSystemSoftwareVersion)
+BRIDGE_IMPL(sceCompatGetStatus)
+BRIDGE_IMPL(sceCompatGetTitleList)
+BRIDGE_IMPL(sceCompatGetUpdateState)
+BRIDGE_IMPL(sceCompatIdStorageLookup)
+BRIDGE_IMPL(sceCompatInitEx)
+BRIDGE_IMPL(sceCompatInterrupt)
+BRIDGE_IMPL(sceCompatIsPocketStationTitle)
+BRIDGE_IMPL(sceCompatLCDCSync)
+BRIDGE_IMPL(sceCompatReadShared32)
+BRIDGE_IMPL(sceCompatReturnValueEx)
+BRIDGE_IMPL(sceCompatSetDisplayConfig)
+BRIDGE_IMPL(sceCompatSetRif)
+BRIDGE_IMPL(sceCompatSetSuspendSema)
+BRIDGE_IMPL(sceCompatSetUpdateState)
+BRIDGE_IMPL(sceCompatStart)
+BRIDGE_IMPL(sceCompatStop)
+BRIDGE_IMPL(sceCompatSuspendResume)
+BRIDGE_IMPL(sceCompatUninit)
+BRIDGE_IMPL(sceCompatWaitAndGetRequest)
+BRIDGE_IMPL(sceCompatWaitIntr)
+BRIDGE_IMPL(sceCompatWaitSpecialRequest)
+BRIDGE_IMPL(sceCompatWriteShared32)
+BRIDGE_IMPL(sceCompatWriteSharedCtrl)
+BRIDGE_IMPL(sceCompatVshGetPspSystemSoftwareVersion)

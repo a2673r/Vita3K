@@ -17,6 +17,7 @@
 
 #include "SceAppMgr.h"
 
+#include <io/device.h>
 #include <io/state.h>
 #include <kernel/state.h>
 #include <packages/sfo.h>
@@ -75,7 +76,16 @@ EXPORT(int, _sceAppMgrAppParamGetInt) {
 EXPORT(SceInt32, _sceAppMgrAppParamGetString, int pid, int param, char *string, int length) {
     TRACY_FUNC(_sceAppMgrAppParamGetString, pid, param, string, length);
     std::string res;
-    if (!sfo::get_data_by_id(res, emuenv.sfo_handle, param))
+    LOG_DEBUG("pid: {}, param: {}", pid, log_hex(param));
+    if (!sfo::get_data_by_id(res, emuenv.sfo_handle, param)) {
+        switch (param) {
+        case 0xc:
+            res = emuenv.io.app_path;
+            break;
+        default: break;
+        }
+    }
+    if (res.empty())
         return RET_ERROR(SCE_APPMGR_ERROR_INVALID);
     else {
         res.copy(string, length);
@@ -389,17 +399,14 @@ EXPORT(SceInt32, _sceAppMgrLoadExec, const char *appPath, Ptr<char> const argv[]
         return RET_ERROR(SCE_APPMGR_ERROR_INVALID);
 
     // Create exec path
-    auto exec_path = static_cast<std::string>(appPath);
-    if (exec_path.find("app0:/") != std::string::npos)
-        exec_path.erase(0, 6);
-    else
-        exec_path.erase(0, 5);
+    const auto app_device = device::get_device(appPath);
+    const auto exec_path = device::remove_device_from_path(appPath, app_device);
 
     LOG_INFO("sceAppMgrLoadExec run self: {}", appPath);
 
     // Load exec executable
     vfs::FileBuffer exec_buffer;
-    if (vfs::read_app_file(exec_buffer, emuenv.pref_path.wstring(), emuenv.io.app_path, exec_path)) {
+    if (vfs::read_file(app_device, exec_buffer, emuenv.pref_path, exec_path)) {
         if (argv && argv->get(emuenv.mem)) {
             size_t args = 0;
             emuenv.load_exec_argv = "\"";
@@ -418,6 +425,7 @@ EXPORT(SceInt32, _sceAppMgrLoadExec, const char *appPath, Ptr<char> const argv[]
 
         emuenv.kernel.exit_delete_all_threads();
 
+        emuenv.load_app_device = app_device._to_string();
         emuenv.load_app_path = emuenv.io.app_path;
         emuenv.load_exec_path = exec_path;
         emuenv.load_exec = true;
@@ -728,7 +736,8 @@ EXPORT(int, sceAppMgrAcquireBgmPortForMusicPlayer) {
 
 EXPORT(int, sceAppMgrAcquireBgmPortWithPriority) {
     TRACY_FUNC(sceAppMgrAcquireBgmPortWithPriority);
-    return UNIMPLEMENTED();
+    STUBBED("return 0");
+    return 0;
 }
 
 EXPORT(int, sceAppMgrAcquireBtrm) {
@@ -746,8 +755,9 @@ EXPORT(int, sceAppMgrAcquireSoundOutExclusive2) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrActivateApp) {
+EXPORT(int, sceAppMgrActivateApp, SceUID appId) {
     TRACY_FUNC(sceAppMgrActivateApp);
+    LOG_DEBUG("appId: {}", appId);
     return UNIMPLEMENTED();
 }
 
@@ -761,8 +771,10 @@ EXPORT(int, sceAppMgrDeclareSystemChatApp) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrDestroyAppByAppId) {
+EXPORT(int, sceAppMgrDestroyAppByAppId, int id) {
     TRACY_FUNC(sceAppMgrDestroyAppByAppId);
+    LOG_DEBUG("id: {}", id);
+
     return UNIMPLEMENTED();
 }
 
@@ -866,8 +878,9 @@ EXPORT(int, sceAppMgrIsOtherAppPresent) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrIsPidShellAndCrashed) {
+EXPORT(int, sceAppMgrIsPidShellAndCrashed, int pid) {
     TRACY_FUNC(sceAppMgrIsPidShellAndCrashed);
+    //LOG_DEBUG("pid: {}", pid);
     return UNIMPLEMENTED();
 }
 
@@ -906,8 +919,9 @@ EXPORT(int, sceAppMgrReceiveShellEventNum) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceAppMgrReleaseBgmPort) {
+EXPORT(int, sceAppMgrReleaseBgmPort, int port) {
     TRACY_FUNC(sceAppMgrReleaseBgmPort);
+    LOG_DEBUG("port: {}", port);
     return UNIMPLEMENTED();
 }
 
@@ -1030,3 +1044,195 @@ EXPORT(int, sceAppMgrSuspendUntilActivated) {
     TRACY_FUNC(sceAppMgrSuspendUntilActivated);
     return UNIMPLEMENTED();
 }
+
+BRIDGE_IMPL(__sceAppMgrGetAppState)
+BRIDGE_IMPL(_sceAppMgrAcidDirSet)
+BRIDGE_IMPL(_sceAppMgrAcquireSoundOutExclusive3)
+BRIDGE_IMPL(_sceAppMgrAddContAddMount)
+BRIDGE_IMPL(_sceAppMgrAddContMount)
+BRIDGE_IMPL(_sceAppMgrAppDataMount)
+BRIDGE_IMPL(_sceAppMgrAppDataMountById)
+BRIDGE_IMPL(_sceAppMgrAppMount)
+BRIDGE_IMPL(_sceAppMgrAppParamGetInt)
+BRIDGE_IMPL(_sceAppMgrAppParamGetString)
+BRIDGE_IMPL(_sceAppMgrAppParamSetString)
+BRIDGE_IMPL(_sceAppMgrAppUmount)
+BRIDGE_IMPL(_sceAppMgrBgdlGetQueueStatus)
+BRIDGE_IMPL(_sceAppMgrCaptureFrameBufDMACByAppId)
+BRIDGE_IMPL(_sceAppMgrCaptureFrameBufIFTUByAppId)
+BRIDGE_IMPL(_sceAppMgrCheckRifGD)
+BRIDGE_IMPL(_sceAppMgrContentInstallPeriodStart)
+BRIDGE_IMPL(_sceAppMgrContentInstallPeriodStop)
+BRIDGE_IMPL(_sceAppMgrConvertVs0UserDrivePath)
+BRIDGE_IMPL(_sceAppMgrDeclareShellProcess2)
+BRIDGE_IMPL(_sceAppMgrDestroyAppByName)
+BRIDGE_IMPL(_sceAppMgrDrmClose)
+BRIDGE_IMPL(_sceAppMgrDrmOpen)
+BRIDGE_IMPL(_sceAppMgrForceUmount)
+BRIDGE_IMPL(_sceAppMgrGameDataMount)
+BRIDGE_IMPL(_sceAppMgrGetAppInfo)
+BRIDGE_IMPL(_sceAppMgrGetAppMgrState)
+BRIDGE_IMPL(_sceAppMgrGetAppParam)
+BRIDGE_IMPL(_sceAppMgrGetAppParam2)
+BRIDGE_IMPL(_sceAppMgrGetBootParam)
+BRIDGE_IMPL(_sceAppMgrGetBudgetInfo)
+BRIDGE_IMPL(_sceAppMgrGetCoredumpStateForShell)
+BRIDGE_IMPL(_sceAppMgrGetCurrentBgmState)
+BRIDGE_IMPL(_sceAppMgrGetCurrentBgmState2)
+BRIDGE_IMPL(_sceAppMgrGetDevInfo)
+BRIDGE_IMPL(_sceAppMgrGetFgAppInfo)
+BRIDGE_IMPL(_sceAppMgrGetIdByName)
+BRIDGE_IMPL(_sceAppMgrGetMediaTypeFromDrive)
+BRIDGE_IMPL(_sceAppMgrGetMediaTypeFromDriveByPid)
+BRIDGE_IMPL(_sceAppMgrGetMountProcessNum)
+BRIDGE_IMPL(_sceAppMgrGetNameById)
+BRIDGE_IMPL(_sceAppMgrGetPfsDrive)
+BRIDGE_IMPL(_sceAppMgrGetPidListForShell)
+BRIDGE_IMPL(_sceAppMgrGetRawPath)
+BRIDGE_IMPL(_sceAppMgrGetRawPathOfApp0ByAppIdForShell)
+BRIDGE_IMPL(_sceAppMgrGetRawPathOfApp0ByPidForShell)
+BRIDGE_IMPL(_sceAppMgrGetRecommendedScreenOrientation)
+BRIDGE_IMPL(_sceAppMgrGetRunningAppIdListForShell)
+BRIDGE_IMPL(_sceAppMgrGetSaveDataInfo)
+BRIDGE_IMPL(_sceAppMgrGetSaveDataInfoForSpecialExport)
+BRIDGE_IMPL(_sceAppMgrGetStatusByAppId)
+BRIDGE_IMPL(_sceAppMgrGetStatusById)
+BRIDGE_IMPL(_sceAppMgrGetStatusByName)
+BRIDGE_IMPL(_sceAppMgrGetSystemDataFilePlayReady)
+BRIDGE_IMPL(_sceAppMgrGetUserDirPath)
+BRIDGE_IMPL(_sceAppMgrGetUserDirPathById)
+BRIDGE_IMPL(_sceAppMgrGetVs0UserDataDrive)
+BRIDGE_IMPL(_sceAppMgrGetVs0UserModuleDrive)
+BRIDGE_IMPL(_sceAppMgrInitSafeMemoryById)
+BRIDGE_IMPL(_sceAppMgrInstallDirMount)
+BRIDGE_IMPL(_sceAppMgrIsCameraActive)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByName)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByName2)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByName2ForShell)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByName2ndStage)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByNameForShell)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByPath4)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByUri)
+BRIDGE_IMPL(_sceAppMgrLaunchAppByUri2)
+BRIDGE_IMPL(_sceAppMgrLaunchVideoStreamingApp)
+BRIDGE_IMPL(_sceAppMgrLoadExec)
+BRIDGE_IMPL(_sceAppMgrLoadSaveDataSystemFile)
+BRIDGE_IMPL(_sceAppMgrLoopBackFormat)
+BRIDGE_IMPL(_sceAppMgrLoopBackMount)
+BRIDGE_IMPL(_sceAppMgrMmsMount)
+BRIDGE_IMPL(_sceAppMgrOverwriteLaunchParamForShell)
+BRIDGE_IMPL(_sceAppMgrPeekLaunchParamForShell)
+BRIDGE_IMPL(_sceAppMgrPhotoMount)
+BRIDGE_IMPL(_sceAppMgrPhotoUmount)
+BRIDGE_IMPL(_sceAppMgrPspSaveDataGetParams)
+BRIDGE_IMPL(_sceAppMgrPspSaveDataRead)
+BRIDGE_IMPL(_sceAppMgrPspSaveDataRootMount)
+BRIDGE_IMPL(_sceAppMgrReceiveEvent)
+BRIDGE_IMPL(_sceAppMgrReceiveEventNum)
+BRIDGE_IMPL(_sceAppMgrReceiveNotificationRequestForShell)
+BRIDGE_IMPL(_sceAppMgrReceiveShellEvent)
+BRIDGE_IMPL(_sceAppMgrReceiveSystemEvent)
+BRIDGE_IMPL(_sceAppMgrSaveDataAddMount)
+BRIDGE_IMPL(_sceAppMgrSaveDataDataRemove)
+BRIDGE_IMPL(_sceAppMgrSaveDataDataRemove2)
+BRIDGE_IMPL(_sceAppMgrSaveDataDataSave)
+BRIDGE_IMPL(_sceAppMgrSaveDataDataSave2)
+BRIDGE_IMPL(_sceAppMgrSaveDataGetQuota)
+BRIDGE_IMPL(_sceAppMgrSaveDataMount)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotCreate)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotDelete)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotFileClose)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotFileGetParam)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotFileOpen)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotGetParam)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotGetStatus)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotInit)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotSetParam)
+BRIDGE_IMPL(_sceAppMgrSaveDataSlotSetStatus)
+BRIDGE_IMPL(_sceAppMgrSaveDataUmount)
+BRIDGE_IMPL(_sceAppMgrSendNotificationRequest)
+BRIDGE_IMPL(_sceAppMgrSendParam)
+BRIDGE_IMPL(_sceAppMgrSendSystemEvent)
+BRIDGE_IMPL(_sceAppMgrSendSystemEvent2)
+BRIDGE_IMPL(_sceAppMgrSetBackRenderPortOwner)
+BRIDGE_IMPL(_sceAppMgrSetBgmProxyApp)
+BRIDGE_IMPL(_sceAppMgrSetNetworkDisconnectionWarningDialogState)
+BRIDGE_IMPL(_sceAppMgrSetPowerSaveMode)
+BRIDGE_IMPL(_sceAppMgrSetRecommendedScreenOrientationForShell)
+BRIDGE_IMPL(_sceAppMgrSetShellScreenOrientation)
+BRIDGE_IMPL(_sceAppMgrSetSystemDataFile)
+BRIDGE_IMPL(_sceAppMgrSetSystemDataFilePlayReady)
+BRIDGE_IMPL(_sceAppMgrSystemParamDateTimeGetConf)
+BRIDGE_IMPL(_sceAppMgrSystemParamGetInt)
+BRIDGE_IMPL(_sceAppMgrSystemParamGetString)
+BRIDGE_IMPL(_sceAppMgrThemeDataMount)
+BRIDGE_IMPL(_sceAppMgrTrophyMount)
+BRIDGE_IMPL(_sceAppMgrTrophyMountById)
+BRIDGE_IMPL(_sceAppMgrUmount)
+BRIDGE_IMPL(_sceAppMgrUmountByPid)
+BRIDGE_IMPL(_sceAppMgrUpdateSaveDataParam)
+BRIDGE_IMPL(_sceAppMgrWorkDirMount)
+BRIDGE_IMPL(_sceAppMgrWorkDirMountById)
+BRIDGE_IMPL(sceAppMgrAcquireBgmPort)
+BRIDGE_IMPL(sceAppMgrAcquireBgmPortForMusicPlayer)
+BRIDGE_IMPL(sceAppMgrAcquireBgmPortWithPriority)
+BRIDGE_IMPL(sceAppMgrAcquireBtrm)
+BRIDGE_IMPL(sceAppMgrAcquireSoundOutExclusive)
+BRIDGE_IMPL(sceAppMgrAcquireSoundOutExclusive2)
+BRIDGE_IMPL(sceAppMgrActivateApp)
+BRIDGE_IMPL(sceAppMgrDeactivateApp)
+BRIDGE_IMPL(sceAppMgrDeclareSystemChatApp)
+BRIDGE_IMPL(sceAppMgrDestroyAppByAppId)
+BRIDGE_IMPL(sceAppMgrDestroyOtherApp)
+BRIDGE_IMPL(sceAppMgrDestroyOtherAppByAppIdForShell)
+BRIDGE_IMPL(sceAppMgrDestroyOtherAppByPidForShell)
+BRIDGE_IMPL(sceAppMgrDump)
+BRIDGE_IMPL(sceAppMgrEnableCoredumpForTest)
+BRIDGE_IMPL(sceAppMgrEnableDuckingOnSystemChat)
+BRIDGE_IMPL(sceAppMgrEnablePrioritizingSystemChat)
+BRIDGE_IMPL(sceAppMgrExitToLiveboardForGameApp)
+BRIDGE_IMPL(sceAppMgrFinishCoredumpForShell)
+BRIDGE_IMPL(sceAppMgrGetAppIdByAppId)
+BRIDGE_IMPL(sceAppMgrGetExtraAppParam)
+BRIDGE_IMPL(sceAppMgrGetProcessIdByAppIdForShell)
+BRIDGE_IMPL(sceAppMgrGetSystemDataFile)
+BRIDGE_IMPL(sceAppMgrGrowMemory)
+BRIDGE_IMPL(sceAppMgrGrowMemory3)
+BRIDGE_IMPL(sceAppMgrIsDevelopmentMode)
+BRIDGE_IMPL(sceAppMgrIsGameBudgetAppPresent)
+BRIDGE_IMPL(sceAppMgrIsGameProgram)
+BRIDGE_IMPL(sceAppMgrIsNonGameProgram)
+BRIDGE_IMPL(sceAppMgrIsOtherAppPresent)
+BRIDGE_IMPL(sceAppMgrIsPidShellAndCrashed)
+BRIDGE_IMPL(sceAppMgrIsPsNowClient)
+BRIDGE_IMPL(sceAppMgrLaunchAppCancel)
+BRIDGE_IMPL(sceAppMgrLoadSafeMemory)
+BRIDGE_IMPL(sceAppMgrNotifyLiveBoardModeForShell)
+BRIDGE_IMPL(sceAppMgrQuitApp)
+BRIDGE_IMPL(sceAppMgrQuitForNonSuspendableApp)
+BRIDGE_IMPL(sceAppMgrReceiveShellEventNum)
+BRIDGE_IMPL(sceAppMgrReleaseBgmPort)
+BRIDGE_IMPL(sceAppMgrReleaseBtrm)
+BRIDGE_IMPL(sceAppMgrReleaseSoundOutExclusive)
+BRIDGE_IMPL(sceAppMgrReleaseSoundOutExclusive2)
+BRIDGE_IMPL(sceAppMgrReleaseSoundOutExclusive3)
+BRIDGE_IMPL(sceAppMgrRestoreBgmSettingForShell)
+BRIDGE_IMPL(sceAppMgrRestoreDisplaySettingForShell)
+BRIDGE_IMPL(sceAppMgrResumeBgAppByShell)
+BRIDGE_IMPL(sceAppMgrReturnLiveAreaOperationResultForShell)
+BRIDGE_IMPL(sceAppMgrSaveDataGetCachedRequiredSizeKiB)
+BRIDGE_IMPL(sceAppMgrSaveSafeMemory)
+BRIDGE_IMPL(sceAppMgrSendLiveBoardMode)
+BRIDGE_IMPL(sceAppMgrSetAppProtectionModeOnMemoryShortage)
+BRIDGE_IMPL(sceAppMgrSetBgmSubPriority)
+BRIDGE_IMPL(sceAppMgrSetBgmSubPriorityForSystemChat)
+BRIDGE_IMPL(sceAppMgrSetDisplayMergeConf)
+BRIDGE_IMPL(sceAppMgrSetFakeSettingBug51800)
+BRIDGE_IMPL(sceAppMgrSetInfobarState)
+BRIDGE_IMPL(sceAppMgrSetInfobarStateForCommonDialog)
+BRIDGE_IMPL(sceAppMgrSetInfobarStateForShellByAppId)
+BRIDGE_IMPL(sceAppMgrSetRecommendedScreenOrientationActivated)
+BRIDGE_IMPL(sceAppMgrSetSystemImposeState)
+BRIDGE_IMPL(sceAppMgrSetSystemImposeState2)
+BRIDGE_IMPL(sceAppMgrSuspendBgAppByShell)
+BRIDGE_IMPL(sceAppMgrSuspendUntilActivated)

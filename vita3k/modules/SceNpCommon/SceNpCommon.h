@@ -17,31 +17,26 @@
 
 #pragma once
 
-#include <enum.h>
+#include <module/module.h>
 
-BETTER_ENUM(VitaIoDevice, int,
-    addcont0 = 0,
-    app0,
-    appmeta0,
-    cache0,
-    host0,
-    gamedata0,
-    grw0,
-    imc0,
-    os0,
-    pd0,
-    sa0,
-    savedata0,
-    savedata1,
-    sd0,
-    tm0,
-    tty0,
-    tty1,
-    ud0,
-    uma0,
-    ur0,
-    ux0,
-    vd0,
-    vs0,
-    xmc0,
-    _INVALID = -1)
+BRIDGE_DECL(sceNpAuthAbortRequest)
+BRIDGE_DECL(sceNpAuthCreateStartRequest)
+BRIDGE_DECL(sceNpAuthDestroyRequest)
+BRIDGE_DECL(sceNpAuthGetEntitlementById)
+BRIDGE_DECL(sceNpAuthGetEntitlementByIdPrefix)
+BRIDGE_DECL(sceNpAuthGetEntitlementIdList)
+BRIDGE_DECL(sceNpAuthGetTicket)
+BRIDGE_DECL(sceNpAuthGetTicketParam)
+BRIDGE_DECL(sceNpAuthInit)
+BRIDGE_DECL(sceNpAuthTerm)
+BRIDGE_DECL(sceNpCmpNpId)
+BRIDGE_DECL(sceNpCmpNpIdInOrder)
+BRIDGE_DECL(sceNpCmpOnlineId)
+BRIDGE_DECL(sceNpCommonBase64Encode)
+BRIDGE_DECL(sceNpCommonFreeNpServerName)
+BRIDGE_DECL(sceNpCommonGetNpEnviroment)
+BRIDGE_DECL(sceNpCommonGetSystemSwVersion)
+BRIDGE_DECL(sceNpCommonMallocNpServerName)
+BRIDGE_DECL(sceNpGetPlatformType)
+BRIDGE_DECL(sceNpSetPlatformType)
+BRIDGE_DECL(SceNpCommon_650D111B)

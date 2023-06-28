@@ -15,26 +15,20 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <module/module.h>
+#include "SceMgVideo.h"
 
-EXPORT(int, sceSblPmMgrAuthEtoI) {
+EXPORT(int, SceMgVideo_D6EE7B53) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceSblPmMgrGetCurrentMode, int *result) {
-    *result = 0;
-
-    return STUBBED("Result to 0");
-}
-
-EXPORT(int, sceSblPmMgrGetProductModeForUser) {
+EXPORT(int, SceMgVideo_18D553EB) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceSblPmMgrGetProductModeFromNVS) {
+EXPORT(int, SceMgVideo_C62CA5A7) {
     return UNIMPLEMENTED();
 }
 
-EXPORT(int, sceSblPmMgrSetProductModeOffForUser) {
-    return UNIMPLEMENTED();
-}
+BRIDGE_IMPL(SceMgVideo_D6EE7B53)
+BRIDGE_IMPL(SceMgVideo_18D553EB)
+BRIDGE_IMPL(SceMgVideo_C62CA5A7)

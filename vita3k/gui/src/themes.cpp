@@ -126,7 +126,7 @@ void init_theme_start_background(GuiState &gui, EmuEnvState &emuenv, const std::
 
     const auto content_id_wstr{ fs::path(string_utils::utf_to_wide(content_id)) };
     if (!content_id.empty() && (content_id != "default")) {
-        const auto THEME_PATH_XML{ emuenv.pref_path / "ux0/theme" / content_id_wstr / "theme.xml" };
+        const auto THEME_PATH_XML{ fs::path(emuenv.pref_path) / "ux0/theme" / content_id_wstr / "theme.xml" };
         pugi::xml_document doc;
         if (doc.load_file(THEME_PATH_XML.c_str())) {
             const auto theme = doc.child("theme");
@@ -166,14 +166,14 @@ void init_theme_start_background(GuiState &gui, EmuEnvState &emuenv, const std::
 
     if (theme_start_name.empty()) {
         const auto DEFAULT_START_PATH{ fs::path("data/internal/keylock/keylock.png") };
-        if (fs::exists(emuenv.pref_path / "vs0" / DEFAULT_START_PATH))
-            vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.pref_path.wstring(), DEFAULT_START_PATH);
+        if (fs::exists(fs::path(emuenv.pref_path) / "vs0" / DEFAULT_START_PATH))
+            vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.pref_path, DEFAULT_START_PATH);
         else {
             LOG_WARN("Default start background not found, install firmware for fix this.");
             return;
         }
     } else
-        vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path.wstring(), fs::path("theme") / content_id_wstr / theme_start_name);
+        vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path, fs::path("theme") / content_id_wstr / theme_start_name);
 
     if (buffer.empty()) {
         LOG_WARN("Background not found: '{}', for content id: {}.", theme_start_name, content_id);
@@ -228,7 +228,8 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
         { "NPXS10003", {} },
         { "NPXS10008", {} },
         { "NPXS10015", {} },
-        { "NPXS10026", {} }
+        { "NPXS10026", {} },
+        { "NPXS19999", {} }
     };
 
     gui.app_selector.sys_apps_icon.clear();
@@ -241,7 +242,7 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
     const auto content_id_wstr = string_utils::utf_to_wide(content_id);
 
     if (content_id != "default") {
-        const auto THEME_XML_PATH{ emuenv.pref_path / "ux0/theme" / content_id_wstr / "theme.xml" };
+        const auto THEME_XML_PATH{ fs::path(emuenv.pref_path) / "ux0/theme" / content_id_wstr / "theme.xml" };
         pugi::xml_document doc;
 
         if (doc.load_file(THEME_XML_PATH.c_str())) {
@@ -259,6 +260,8 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
                     theme_icon_name["NPXS10015"] = home_property.child("m_settings").child("m_iconFilePath").text().as_string();
                 if (!home_property.child("m_hostCollabo").child("m_iconFilePath").text().empty())
                     theme_icon_name["NPXS10026"] = home_property.child("m_hostCollabo").child("m_iconFilePath").text().as_string();
+                if (!home_property.child("m_power").child("m_iconFilePath").text().empty())
+                    theme_icon_name["NPXS19999"] = home_property.child("m_power").child("m_iconFilePath").text().as_string();
 
                 // Home
                 for (const auto &param : home_property.child("m_bgParam")) {
@@ -301,7 +304,7 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
                     const auto type = notice.first;
                     const auto name = notice.second;
 
-                    vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path.wstring(), fs::path("theme") / content_id_wstr / name);
+                    vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path, fs::path("theme") / content_id_wstr / name);
 
                     if (buffer.empty()) {
                         LOG_WARN("Notice icon, Name: '{}', Not found for content id: {}.", name, content_id);
@@ -327,7 +330,7 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
             "NPXS10098",
         };
         for (const auto &bg : app_id_bg_list) {
-            if (fs::exists(emuenv.pref_path / "vs0/app" / bg / "sce_sys/pic0.png"))
+            if (fs::exists(fs::path(emuenv.pref_path) / "vs0/app" / bg / "sce_sys/pic0.png"))
                 theme_bg_name.push_back(bg);
         }
     }
@@ -339,10 +342,11 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
 
         const auto title_id = icon.first;
         const auto name = icon.second;
-        if (name.empty())
-            vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.pref_path.wstring(), "app/" + title_id + "/sce_sys/icon0.png");
-        else
-            vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path.wstring(), fs::path("theme") / content_id_wstr / name);
+        if (name.empty()) {
+            const auto icon_path = title_id == "NPXS19999" ? fs::path("data/internal/icon/power.png") : fs::path("app") / title_id / "sce_sys/icon0.png";
+            vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.pref_path, icon_path);
+        } else
+            vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path, fs::path("theme") / content_id_wstr / name);
 
         if (buffer.empty()) {
             buffer = init_default_icon(gui, emuenv);
@@ -358,7 +362,8 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
             continue;
         }
 
-        gui.app_selector.sys_apps_icon[title_id].init(gui.imgui_state.get(), data, width, height);
+        const auto app_path = "vs0:" + (title_id == "NPXS19999" ? "vsh/shell" : "app/" + title_id); 
+        gui.app_selector.sys_apps_icon[app_path].init(gui.imgui_state.get(), data, width, height);
         stbi_image_free(data);
     }
 
@@ -368,9 +373,9 @@ bool init_theme(GuiState &gui, EmuEnvState &emuenv, const std::string &content_i
         vfs::FileBuffer buffer;
 
         if (content_id == "default")
-            vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.pref_path.wstring(), "app/" + bg + "/sce_sys/pic0.png");
+            vfs::read_file(VitaIoDevice::vs0, buffer, emuenv.pref_path, "app/" + bg + "/sce_sys/pic0.png");
         else
-            vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path.wstring(), fs::path("theme") / content_id_wstr / bg);
+            vfs::read_file(VitaIoDevice::ux0, buffer, emuenv.pref_path, fs::path("theme") / content_id_wstr / bg);
 
         if (buffer.empty()) {
             LOG_WARN("Background not found: '{}', for content id: {}.", bg, content_id);
@@ -513,7 +518,7 @@ void draw_start_screen(GuiState &gui, EmuEnvState &emuenv) {
     }
     ImGui::PopFont();
 
-    if ((ImGui::IsWindowHovered(ImGuiFocusedFlags_RootWindow) && ImGui::IsMouseClicked(0))) {
+    if ((ImGui::IsWindowHovered(ImGuiFocusedFlags_RootWindow) && ImGui::IsMouseClicked(0)) || ImGui::IsKeyPressed(emuenv.cfg.keyboard_button_circle)) {
         gui.vita_area.start_screen = false;
         gui.vita_area.home_screen = true;
         if (emuenv.cfg.show_info_bar)

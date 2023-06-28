@@ -55,7 +55,7 @@ EXPORT(int, _sceIoDevctlAsync) {
 
 EXPORT(int, _sceIoDopen, const char *dir) {
     TRACY_FUNC(_sceIoDopen, dir);
-    return open_dir(emuenv.io, dir, emuenv.pref_path.wstring(), export_name);
+    return open_dir(emuenv.io, dir, emuenv.pref_path, export_name);
 }
 
 EXPORT(int, _sceIoDread, const SceUID fd, SceIoDirent *dir) {
@@ -63,12 +63,12 @@ EXPORT(int, _sceIoDread, const SceUID fd, SceIoDirent *dir) {
     if (dir == nullptr) {
         return RET_ERROR(SCE_KERNEL_ERROR_ILLEGAL_ADDR);
     }
-    return read_dir(emuenv.io, fd, dir, emuenv.pref_path.wstring(), export_name);
+    return read_dir(emuenv.io, fd, dir, emuenv.pref_path, export_name);
 }
 
 EXPORT(int, _sceIoGetstat, const char *file, SceIoStat *stat) {
     TRACY_FUNC(_sceIoGetstat, file, stat);
-    return stat_file(emuenv.io, file, stat, emuenv.pref_path.wstring(), export_name);
+    return stat_file(emuenv.io, file, stat, emuenv.pref_path, export_name);
 }
 
 EXPORT(int, _sceIoGetstatAsync) {
@@ -78,7 +78,7 @@ EXPORT(int, _sceIoGetstatAsync) {
 
 EXPORT(int, _sceIoGetstatByFd, const SceUID fd, SceIoStat *stat) {
     TRACY_FUNC(_sceIoGetstatByFd, fd, stat);
-    return stat_file_by_fd(emuenv.io, fd, stat, emuenv.pref_path.wstring(), export_name);
+    return stat_file_by_fd(emuenv.io, fd, stat, emuenv.pref_path, export_name);
 }
 
 EXPORT(int, _sceIoIoctl) {
@@ -103,7 +103,7 @@ EXPORT(int, _sceIoLseekAsync) {
 
 EXPORT(int, _sceIoMkdir, const char *dir, const SceMode mode) {
     TRACY_FUNC(_sceIoMkdir, dir, mode);
-    return create_dir(emuenv.io, dir, mode, emuenv.pref_path.wstring(), export_name);
+    return create_dir(emuenv.io, dir, mode, emuenv.pref_path, export_name);
 }
 
 EXPORT(int, _sceIoMkdirAsync) {
@@ -117,7 +117,7 @@ EXPORT(int, _sceIoOpen, const char *file, const int flags, const SceMode mode) {
         return RET_ERROR(SCE_ERROR_ERRNO_EINVAL);
     }
     LOG_INFO("Opening file: {}", file);
-    return open_file(emuenv.io, file, flags, emuenv.pref_path.wstring(), export_name);
+    return open_file(emuenv.io, file, flags, emuenv.pref_path, export_name);
 }
 
 EXPORT(int, _sceIoOpenAsync) {
@@ -324,3 +324,69 @@ EXPORT(int, sceIoWriteAsync) {
     TRACY_FUNC(sceIoWriteAsync);
     return UNIMPLEMENTED();
 }
+
+EXPORT(int, SceIofilemgrForDriver_673D2FCD) {
+    TRACY_FUNC(SceIofilemgrForDriver_673D2FCD);
+    return UNIMPLEMENTED();
+}
+
+BRIDGE_IMPL(_sceIoChstat)
+BRIDGE_IMPL(_sceIoChstatAsync)
+BRIDGE_IMPL(_sceIoChstatByFd)
+BRIDGE_IMPL(_sceIoCompleteMultiple)
+BRIDGE_IMPL(_sceIoDevctl)
+BRIDGE_IMPL(_sceIoDevctlAsync)
+BRIDGE_IMPL(_sceIoDopen)
+BRIDGE_IMPL(_sceIoDread)
+BRIDGE_IMPL(_sceIoGetstat)
+BRIDGE_IMPL(_sceIoGetstatAsync)
+BRIDGE_IMPL(_sceIoGetstatByFd)
+BRIDGE_IMPL(_sceIoIoctl)
+BRIDGE_IMPL(_sceIoIoctlAsync)
+BRIDGE_IMPL(_sceIoLseek)
+BRIDGE_IMPL(_sceIoLseekAsync)
+BRIDGE_IMPL(_sceIoMkdir)
+BRIDGE_IMPL(_sceIoMkdirAsync)
+BRIDGE_IMPL(_sceIoOpen)
+BRIDGE_IMPL(_sceIoOpenAsync)
+BRIDGE_IMPL(_sceIoPread)
+BRIDGE_IMPL(_sceIoPreadAsync)
+BRIDGE_IMPL(_sceIoPwrite)
+BRIDGE_IMPL(_sceIoPwriteAsync)
+BRIDGE_IMPL(_sceIoRemove)
+BRIDGE_IMPL(_sceIoRemoveAsync)
+BRIDGE_IMPL(_sceIoRename)
+BRIDGE_IMPL(_sceIoRenameAsync)
+BRIDGE_IMPL(_sceIoRmdir)
+BRIDGE_IMPL(_sceIoRmdirAsync)
+BRIDGE_IMPL(_sceIoSync)
+BRIDGE_IMPL(_sceIoSyncAsync)
+BRIDGE_IMPL(sceIoCancel)
+BRIDGE_IMPL(sceIoChstatByFdAsync)
+BRIDGE_IMPL(sceIoClose)
+BRIDGE_IMPL(sceIoCloseAsync)
+BRIDGE_IMPL(sceIoComplete)
+BRIDGE_IMPL(sceIoDclose)
+BRIDGE_IMPL(sceIoDcloseAsync)
+BRIDGE_IMPL(sceIoDopenAsync)
+BRIDGE_IMPL(sceIoDreadAsync)
+BRIDGE_IMPL(sceIoFlockForSystem)
+BRIDGE_IMPL(sceIoGetPriority)
+BRIDGE_IMPL(sceIoGetPriorityForSystem)
+BRIDGE_IMPL(sceIoGetProcessDefaultPriority)
+BRIDGE_IMPL(sceIoGetThreadDefaultPriority)
+BRIDGE_IMPL(sceIoGetThreadDefaultPriorityForSystem)
+BRIDGE_IMPL(sceIoGetstatByFdAsync)
+BRIDGE_IMPL(sceIoLseek32)
+BRIDGE_IMPL(sceIoRead)
+BRIDGE_IMPL(sceIoReadAsync)
+BRIDGE_IMPL(sceIoSetPriority)
+BRIDGE_IMPL(sceIoSetPriorityForSystem)
+BRIDGE_IMPL(sceIoSetProcessDefaultPriority)
+BRIDGE_IMPL(sceIoSetThreadDefaultPriority)
+BRIDGE_IMPL(sceIoSetThreadDefaultPriorityForSystem)
+BRIDGE_IMPL(sceIoSyncByFd)
+BRIDGE_IMPL(sceIoSyncByFdAsync)
+BRIDGE_IMPL(sceIoWrite)
+BRIDGE_IMPL(sceIoWriteAsync)
+BRIDGE_IMPL(SceIofilemgrForDriver_673D2FCD)

@@ -42,6 +42,7 @@ static SceUID start_module(EmuEnvState &emuenv, SceUID module_id, SceSize args, 
         const char *export_name = __FUNCTION__;
         return RET_ERROR(SCE_KERNEL_ERROR_MODULEMGR_NO_MOD);
     }
+    LOG_DEBUG("module_id: {}, args: {}, argp, Adress: {}, get: {}", module_id, args, argp.address(), argp.get(emuenv.mem));
     auto result = start_module(emuenv, module, args, argp);
     if (pRes)
         *pRes = result;
@@ -151,9 +152,22 @@ EXPORT(int, sceKernelGetModuleList, int flags, SceUID *modids, int *num) {
     return SCE_KERNEL_OK;
 }
 
-EXPORT(int, sceKernelGetSystemSwVersion) {
+typedef struct SceKernelSystemSwVersion {
+    SceSize size;
+    char versionString[0x1C];
+    SceUInt version;
+    SceUInt unk_24;
+} SceKernelSystemSwVersion;
+
+EXPORT(int, sceKernelGetSystemSwVersion, SceKernelSystemSwVersion *version) {
     TRACY_FUNC(sceKernelGetSystemSwVersion);
-    return UNIMPLEMENTED();
+    version->size = sizeof(SceKernelSystemSwVersion);
+    strncpy(version->versionString, "3.74", strlen("3.74") + 1);
+    version->version = 0x03740010;
+    version->unk_24 = 0x03740010;
+    STUBBED("using 3.74");
+
+    return 0;
 }
 
 EXPORT(int, sceKernelInhibitLoadingModule) {
