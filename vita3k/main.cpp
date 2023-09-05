@@ -152,6 +152,27 @@ int main(int argc, char *argv[]) {
         return InitConfigFailed;
     }
 
+    if (cfg.controller_binds.empty() || (cfg.controller_binds.size() != 15)) {
+        cfg.controller_binds = {
+            SDL_CONTROLLER_BUTTON_A,
+            SDL_CONTROLLER_BUTTON_B,
+            SDL_CONTROLLER_BUTTON_X,
+            SDL_CONTROLLER_BUTTON_Y,
+            SDL_CONTROLLER_BUTTON_BACK,
+            SDL_CONTROLLER_BUTTON_GUIDE,
+            SDL_CONTROLLER_BUTTON_START,
+            SDL_CONTROLLER_BUTTON_LEFTSTICK,
+            SDL_CONTROLLER_BUTTON_RIGHTSTICK,
+            SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
+            SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
+            SDL_CONTROLLER_BUTTON_DPAD_UP,
+            SDL_CONTROLLER_BUTTON_DPAD_DOWN,
+            SDL_CONTROLLER_BUTTON_DPAD_LEFT,
+            SDL_CONTROLLER_BUTTON_DPAD_RIGHT
+        };
+        config::serialize_config(cfg, cfg.config_path);
+    }
+
 #ifdef WIN32
     auto res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     LOG_ERROR_IF(res == S_FALSE, "Failed to initialize COM Library");
