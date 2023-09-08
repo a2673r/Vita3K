@@ -32,7 +32,8 @@ constexpr int MAX_TOUCH_BUFFER_SAVED = 64;
 static SceTouchData touch_buffers[MAX_TOUCH_BUFFER_SAVED][2];
 int touch_buffer_idx = 0;
 
-static uint64_t timestamp;
+static bool is_touchpad = false;
+static SDL_ControllerTouchpadEvent touchpad_buffer[2];
 static SDL_TouchFingerEvent finger_buffer[8];
 static uint8_t finger_count = 0;
 static SDL_FingerID finger_id_ref;
@@ -44,7 +45,8 @@ static bool forceTouchEnabled[2] = { false, false };
 
 static SceTouchData recover_touch_events() {
     SceTouchData touch_data;
-    touch_data.timeStamp = timestamp;
+    std::chrono::time_point<std::chrono::steady_clock> ts = std::chrono::steady_clock::now();
+    touch_data.timeStamp = finger_buffer->timestamp;
 
     for (uint8_t i = 0; i < finger_count; i++) {
         touch_data.report[i].id = static_cast<uint8_t>(finger_buffer[i].fingerId - finger_id_ref);
@@ -55,6 +57,27 @@ static SceTouchData recover_touch_events() {
             touch_data.report[i].y = static_cast<uint16_t>(finger_buffer[i].y * 1088);
         } else {
             touch_data.report[i].y = static_cast<uint16_t>(108 + finger_buffer[i].y * 781);
+        }
+    }
+
+    touch_data.reportNum = finger_count;
+
+    return touch_data;
+}
+
+static SceTouchData recover_touchpad_events() {
+    SceTouchData touch_data;
+    touch_data.timeStamp = touchpad_buffer->timestamp;
+
+    for (uint8_t i = 0; i < finger_count; i++) {
+        touch_data.report[i].id = static_cast<uint8_t>(touchpad_buffer[i].finger - finger_id_ref);
+        touch_data.report[i].force = static_cast<uint8_t>(1 + touchpad_buffer[i].pressure * 127);
+        touch_data.report[i].x = static_cast<uint16_t>(touchpad_buffer[i].x * 1920);
+
+        if (touchscreen_port == SCE_TOUCH_PORT_FRONT) {
+            touch_data.report[i].y = static_cast<uint16_t>(touchpad_buffer[i].y * 1088);
+        } else {
+            touch_data.report[i].y = static_cast<uint16_t>(108 + touchpad_buffer[i].y * 781);
         }
     }
 
@@ -126,6 +149,47 @@ void touch_vsync_update(const EmuEnvState &emuenv) {
 
     touch_buffer_idx++;
     touch_buffer_idx %= MAX_TOUCH_BUFFER_SAVED;
+}
+
+int handle_touchpad_event(SDL_ControllerTouchpadEvent &touchpad) {
+    switch (touchpad.type) {
+    case SDL_CONTROLLERTOUCHPADDOWN: {
+        is_touchpad = true;
+        if (finger_count == 0) {
+            finger_id_ref = touchpad.finger;
+        }
+
+        touchpad_buffer[finger_count] = touchpad;
+        finger_count++;
+
+        break;
+    }
+    case SDL_CONTROLLERTOUCHPADUP: {
+        is_touchpad = false;
+        int finger_index = -1;
+        for (int i = 0; i < finger_count; i++) {
+            if (touchpad.finger == touchpad_buffer[i].finger) {
+                finger_index = i;
+            }
+            if (finger_index > -1) {
+                touchpad_buffer[i] = touchpad_buffer[i + 1];
+            }
+        }
+        finger_count--;
+        break;
+    }
+
+    case SDL_CONTROLLERTOUCHPADMOTION: {
+        for (int i = 0; i < finger_count; i++) {
+            if (touchpad.finger == touchpad_buffer[i].finger) {
+                touchpad_buffer[i] = touchpad;
+            }
+        }
+        break;
+    }
+    }
+
+    return 0;
 }
 
 int handle_touch_event(SDL_TouchFingerEvent &finger) {
@@ -209,7 +273,7 @@ int touch_get(const SceUID thread_id, EmuEnvState &emuenv, const SceUInt32 &port
 
     if (registered_touch() && port == touchscreen_port) {
         // less accurate implementation, but which is able to take a real touchscreen as the input
-        pData[0] = recover_touch_events();
+        pData[0] = is_touchpad ? recover_touchpad_events() : recover_touch_events();
         for (int32_t i = 0; i < nb_returned_data; i++) {
             memcpy(&pData[i], &pData[0], sizeof(SceTouchData));
             if (forceTouchEnabled[port_idx]) {
