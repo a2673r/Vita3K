@@ -505,16 +505,16 @@ void getAllAssignedAddrs(std::vector<AssignedAddr> &outAddrs) {
         while (pAdapter) {
             IP_ADDR_STRING *pIPAddr = &pAdapter->IpAddressList;
             while (pIPAddr) {
-                if (noAddress.compare(pIPAddr->IpAddress.String)!=0)
+                if (noAddress.compare(pIPAddr->IpAddress.String) != 0)
                     outAddrs.push_back({ pAdapter->Description, pIPAddr->IpAddress.String, pIPAddr->IpMask.String });
                 pIPAddr = pIPAddr->Next;
             }
             pAdapter = pAdapter->Next;
         }
     } else {
-        LOG_CRITICAL("GetAdaptersInfo failed with error: %d", dwRetVal);
+        LOG_CRITICAL("GetAdaptersInfo failed with error: {}", dwRetVal);
     }
-    if (outAddrs.size()==0)
+    if (outAddrs.empty())
         outAddrs.push_back({ "localhost", "127.0.0.1", "255.255.255.255" });
 #else
     outAddrs.push_back({ "lo", "127.0.0.1" });

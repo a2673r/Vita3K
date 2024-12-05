@@ -113,7 +113,6 @@ std::string to_debug_str<SceNetSocketOption>(const MemState &mem, SceNetSocketOp
 
 EXPORT(int, sceNetAccept, int sid, SceNetSockaddr *addr, unsigned int *addrlen) {
     TRACY_FUNC(sceNetAccept, sid, addr, addrlen);
-    LOG_INFO("sceNetAccept");
     auto sock = lock_and_find(sid, emuenv.net.socks, emuenv.kernel.mutex);
     if (!sock) {
         return RET_ERROR(SCE_NET_EBADF);
@@ -129,7 +128,6 @@ EXPORT(int, sceNetAccept, int sid, SceNetSockaddr *addr, unsigned int *addrlen) 
 
 EXPORT(int, sceNetBind, int sid, const SceNetSockaddr *addr, unsigned int addrlen) {
     TRACY_FUNC(sceNetBind, sid, addr, addrlen);
-    LOG_INFO("sceNetBind");
     auto sock = lock_and_find(sid, emuenv.net.socks, emuenv.kernel.mutex);
     if (!sock) {
         return RET_ERROR(SCE_NET_EBADF);
@@ -144,7 +142,6 @@ EXPORT(int, sceNetClearDnsCache) {
 
 EXPORT(int, sceNetConnect, int sid, const SceNetSockaddr *addr, unsigned int addrlen) {
     TRACY_FUNC(sceNetConnect, sid, addr, addrlen);
-    LOG_INFO("sceNetConnect");
     auto sock = lock_and_find(sid, emuenv.net.socks, emuenv.kernel.mutex);
     if (!sock) {
         return RET_ERROR(SCE_NET_EBADF);
@@ -189,7 +186,6 @@ EXPORT(int, sceNetEpollAbort) {
 
 EXPORT(int, sceNetEpollControl, int eid, SceNetEpollControlFlag op, int id, SceNetEpollEvent *ev) {
     TRACY_FUNC(sceNetEpollControl, eid, op, id, ev);
-    LOG_INFO("sceNetEpollControl");
 
     auto epoll = lock_and_find(eid, emuenv.net.epolls, emuenv.kernel.mutex);
     if (!epoll) {
@@ -223,7 +219,6 @@ EXPORT(int, sceNetEpollControl, int eid, SceNetEpollControlFlag op, int id, SceN
 
 EXPORT(int, sceNetEpollCreate, const char *name, int flags) {
     TRACY_FUNC(sceNetEpollCreate, name, flags);
-    LOG_INFO("sceNetEpollCreate");
     auto id = ++emuenv.net.next_epoll_id;
     auto epoll = std::make_shared<Epoll>();
     const std::lock_guard<std::mutex> lock(emuenv.kernel.mutex);
@@ -233,7 +228,6 @@ EXPORT(int, sceNetEpollCreate, const char *name, int flags) {
 
 EXPORT(int, sceNetEpollDestroy, int eid) {
     TRACY_FUNC(sceNetEpollDestroy, eid);
-    LOG_INFO("sceNetEpollDestroy");
 
     const std::lock_guard<std::mutex> lock(emuenv.kernel.mutex);
     if (emuenv.net.epolls.erase(eid) == 0) {
@@ -245,7 +239,6 @@ EXPORT(int, sceNetEpollDestroy, int eid) {
 
 EXPORT(int, sceNetEpollWait, int eid, SceNetEpollEvent *events, int maxevents, int timeout) {
     TRACY_FUNC(sceNetEpollWait, eid, events, maxevents, timeout);
-    LOG_INFO("sceNetEpollWait");
     auto epoll = lock_and_find(eid, emuenv.net.epolls, emuenv.kernel.mutex);
     if (!epoll) {
         return RET_ERROR(SCE_NET_ERROR_EBADF);
@@ -261,7 +254,6 @@ EXPORT(int, sceNetEpollWaitCB) {
 
 EXPORT(Ptr<int>, sceNetErrnoLoc) {
     TRACY_FUNC(sceNetErrnoLoc);
-    LOG_INFO("sceNetErrnoLoc");
     // TLS id was taken from disasm source
     auto addr = emuenv.kernel.get_thread_tls_addr(emuenv.mem, thread_id, TLS_NET_ERRNO);
     return addr.cast<int>();
@@ -269,7 +261,6 @@ EXPORT(Ptr<int>, sceNetErrnoLoc) {
 
 EXPORT(int, sceNetEtherNtostr, SceNetEtherAddr *n, char *str, unsigned int len) {
     TRACY_FUNC(sceNetEtherNtostr, n, str, len);
-    LOG_INFO("sceNetEtherNtostr");
     if (!emuenv.net.inited)
         return RET_ERROR(SCE_NET_ERROR_ENOTINIT);
 
@@ -283,7 +274,6 @@ EXPORT(int, sceNetEtherNtostr, SceNetEtherAddr *n, char *str, unsigned int len) 
 
 EXPORT(int, sceNetEtherStrton, const char *str, SceNetEtherAddr *n) {
     TRACY_FUNC(sceNetEtherStrton, str, n);
-    LOG_INFO("sceNetEtherStrton");
     if (!emuenv.net.inited)
         return RET_ERROR(SCE_NET_ERROR_ENOTINIT);
 
@@ -298,7 +288,6 @@ EXPORT(int, sceNetEtherStrton, const char *str, SceNetEtherAddr *n) {
 
 EXPORT(int, sceNetGetMacAddress, SceNetEtherAddr *addr, int flags) {
     TRACY_FUNC(sceNetGetMacAddress, addr, flags);
-    LOG_INFO("sceNetGetMacAddress");
     if (addr == nullptr) {
         return RET_ERROR(SCE_NET_EINVAL);
     }
@@ -626,7 +615,7 @@ EXPORT(int, sceNetSocket, const char *name, int domain, SceNetSocketType type, S
         break;
     }
 
-    LOG_ERROR("socket {} {} {}", domain, hostSockType, static_cast<int>(protocol));
+    LOG_DEBUG("socket: {} {} {} {}", name, domain, hostSockType, static_cast<int>(protocol));
     SocketPtr sock = std::make_shared<PosixSocket>(domain, hostSockType, protocol);
 
     std::vector<net_utils::AssignedAddr> addrs;

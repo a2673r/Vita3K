@@ -17,9 +17,9 @@
 
 #include <module/module.h>
 
-#include <adhoc/state.h>
 #include <adhoc/matchingContext.h>
 #include <adhoc/matchingTarget.h>
+#include <adhoc/state.h>
 
 #include <util/tracy.h>
 TRACY_MODULE_NAME(SceNetAdhocMatching);
@@ -286,7 +286,7 @@ EXPORT(int, sceNetAdhocMatchingSendData, int id, SceNetInAddr *addr, int dataLen
     if (target->sendDataStatus != SCE_NET_ADHOC_MATCHING_CONTEXT_SEND_DATA_STATUS_READY)
         return RET_ERROR(SCE_NET_ADHOC_MATCHING_ERROR_DATA_BUSY);
 
-    const int result= ctx->sendData(emuenv, thread_id, *target, dataLen, data);
+    const int result = ctx->sendData(emuenv, thread_id, *target, dataLen, data);
     if (result < SCE_NET_ADHOC_MATCHING_OK)
         return RET_ERROR(result);
 

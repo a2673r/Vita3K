@@ -128,7 +128,7 @@ static void convertSceSockaddrToPosix(const SceNetSockaddr *src, sockaddr *dst) 
     const SceNetSockaddrIn *src_in = (const SceNetSockaddrIn *)src;
     sockaddr_in *dst_in = (sockaddr_in *)dst;
     dst_in->sin_family = src_in->sin_family;
-    dst_in->sin_port = src_in->sin_port+src_in->sin_vport;
+    dst_in->sin_port = src_in->sin_port + src_in->sin_vport;
     memcpy(&dst_in->sin_addr, &src_in->sin_addr, 4);
 }
 
@@ -155,8 +155,8 @@ int PosixSocket::bind(const SceNetSockaddr *addr, unsigned int addrlen) {
     sockaddr_in *inaddr = (sockaddr_in *)&addr2;
     uint8_t addrr[4];
     memcpy(addrr, &inaddr->sin_addr, 4);
-    LOG_ERROR("bind {} {}", sock, sizeof(sockaddr_in));
-    LOG_ERROR("bindadd {} {}.{}.{}.{}:{}", inaddr->sin_family, addrr[0], addrr[1], addrr[2], addrr[3], htons(inaddr->sin_port));
+    LOG_DEBUG("bind: {} {}", sock, sizeof(sockaddr_in));
+    LOG_DEBUG("bind add: {} {}.{}.{}.{}:{}", inaddr->sin_family, addrr[0], addrr[1], addrr[2], addrr[3], htons(inaddr->sin_port));
     return translate_return_value(::bind(sock, &addr2, sizeof(sockaddr_in)));
 }
 
@@ -216,9 +216,9 @@ static int translate_sockopt_level(int level) {
     return -1;
 }
 
-#define CASE_SETSOCKOPT(opt) \
-    case SCE_NET_##opt:      \
-        LOG_ERROR("setsockopt {} {} {} {} {}", sock, level, opt, *((int*)optval), optlen); \
+#define CASE_SETSOCKOPT(opt)                                                                 \
+    case SCE_NET_##opt:                                                                      \
+        LOG_DEBUG("setsockopt: {} {} {} {} {}", sock, level, opt, *((int *)optval), optlen); \
         return translate_return_value(setsockopt(sock, level, opt, (const char *)optval, optlen))
 
 #define CASE_SETSOCKOPT_VALUE(opt, value) \

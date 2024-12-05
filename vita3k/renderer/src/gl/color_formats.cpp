@@ -100,6 +100,9 @@ static const GLint *translate_swizzle(SceGxmColorSwizzle1Mode mode) {
 // Translate popular color base format that can be bit-casted for purposes
 GLenum translate_internal_format(SceGxmColorBaseFormat base_format) {
     switch (base_format) {
+    case SCE_GXM_COLOR_BASE_FORMAT_U1U5U5U5:
+        return GL_RGB5_A1;
+
     case SCE_GXM_COLOR_BASE_FORMAT_U8U8U8:
         return GL_RGB8;
 
@@ -132,6 +135,9 @@ GLenum translate_internal_format(SceGxmColorBaseFormat base_format) {
 
     case SCE_GXM_COLOR_BASE_FORMAT_U8U8:
         return GL_RG8;
+
+    case SCE_GXM_COLOR_BASE_FORMAT_U2F10F10F10:
+        return GL_RGBA16F;
 
     default:
         LOG_ERROR("Unknown base format {}", log_hex(base_format));

@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include <vector>
 #include <span>
+#include <vector>
 
 #include "adhoc/matchingContext.h"
 #include "adhoc/threads.h"

@@ -118,7 +118,6 @@ struct ThreadState {
 
     uint32_t run_adhoc_callback(Address callback_address, uint32_t id, uint32_t type, const Ptr<void> peer, SceSize optLen, const Ptr<void> opt);
 
-
     void suspend();
     void resume(bool step = false);
     std::string log_stack_traceback() const;

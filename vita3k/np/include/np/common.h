@@ -41,6 +41,14 @@ struct SceNpIdOptParam {
 };
 static_assert(sizeof(SceNpIdOptParam) == 0x8, "SceNpIdOptParam is an invalid size");
 
+static_assert(sizeof(SceNpOnlineId) == 0x14, "SceNpOnlineId is an invalid size");
+
+struct SceNpIdOptParam {
+    SceUChar8 unknown[4];
+    char platformType[4];
+};
+static_assert(sizeof(SceNpIdOptParam) == 0x8, "SceNpIdOptParam is an invalid size");
+
 struct SceNpId {
     SceNpOnlineId handle;
     SceNpIdOptParam opt;

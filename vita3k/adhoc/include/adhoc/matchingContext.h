@@ -19,8 +19,8 @@
 
 #include <cassert>
 #include <queue>
-#include <vector>
 #include <span>
+#include <vector>
 
 #include "adhoc/calloutSyncing.h"
 #include "adhoc/state.h"

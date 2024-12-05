@@ -31,3 +31,9 @@ EXPORT(int, sceNetInternalIcmConnect, int sid, int flags) {
     // call sceNetSyscallIcmConnect(sid, flags)
     return UNIMPLEMENTED();
 }
+
+EXPORT(int, sceNetInternal_689b9d7d, uint32_t *actual_intervall) {
+    TRACY_FUNC(sceNetInternal_689b9d7d, actual_intervall);
+    LOG_DEBUG("sceNetInternal_689b9d7d: {}", *actual_intervall);
+    return UNIMPLEMENTED();
+}

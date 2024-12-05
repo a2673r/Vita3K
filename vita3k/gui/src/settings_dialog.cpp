@@ -1103,41 +1103,28 @@ void draw_settings_dialog(GuiState &gui, EmuEnvState &emuenv) {
         ImGui::TextColored(GUI_COLOR_TEXT_MENUBAR, "Adhoc");
         ImGui::Spacing();
 
+        std::vector<std::string> addrsStrings;
         std::vector<const char *> addrsSelect;
         std::vector<const char *> nMaskSelect;
+
         std::vector<net_utils::AssignedAddr> addrs;
         net_utils::getAllAssignedAddrs(addrs);
 
-        std::vector<std::string *> holder;
-        std::vector<std::string *> netMaskHolder;
-
-        for (auto &addr : addrs) {
-            const auto a = new std::string(addr.addr + " (" + addr.name + ")");
-            holder.emplace_back(a);
-            addrsSelect.emplace_back(a->c_str());
-
-            const auto b = new std::string(addr.netMask);
-            netMaskHolder.emplace_back(b);
-            nMaskSelect.emplace_back(b->c_str());
+        for (const auto &addr : addrs) {
+            addrsStrings.emplace_back(addr.addr + " (" + addr.name + ")");
+            addrsSelect.push_back(addrsStrings.back().c_str());
+            nMaskSelect.push_back(addr.netMask.c_str());
         }
 
+        ImGui::PushItemWidth(ImGui::GetWindowWidth() / 2.f);
         ImGui::Combo("Network Address", &emuenv.cfg.adhoc_addr, addrsSelect.data(), static_cast<int>(addrsSelect.size()));
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Select which Address to use in adhoc.");
+        ImGui::PopItemWidth();
 
         ImGui::BeginDisabled();
         ImGui::Combo("Network Mask", &emuenv.cfg.adhoc_addr, nMaskSelect.data(), static_cast<int>(nMaskSelect.size()));
         ImGui::EndDisabled();
-
-        for (auto &h : holder) {
-            delete h;
-        }
-
-        for (auto &h : netMaskHolder) {
-            delete h;
-        }
-        holder.clear();
-        netMaskHolder.clear();
 
         // HTTP
         ImGui::Spacing();
