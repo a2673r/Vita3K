@@ -283,7 +283,7 @@ EXPORT(int, sceNetCtlCheckCallback) {
 
     for (auto &callback : emuenv.netctl.adhocCallbacks) {
         if (callback.pc != 0) {
-            thread->run_callback(callback.pc, { SCE_NET_CTL_EVENT_TYPE_DISCONNECTED, callback.arg });
+            thread->run_callback(callback.pc, { SCE_NET_CTL_EVENT_TYPE_IPOBTAINED, callback.arg });
         }
     }
 

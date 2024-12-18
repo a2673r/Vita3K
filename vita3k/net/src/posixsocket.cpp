@@ -348,24 +348,42 @@ int PosixSocket::get_socket_options(int level, int optname, void *optval, unsign
     return SCE_NET_ERROR_EINVAL;
 }
 
+static int convertSceFlagsToPosix(int sce_flags) {
+    int posix_flags = 0;
+
+    if (sce_flags & SCE_NET_MSG_PEEK)
+        posix_flags |= MSG_PEEK;
+#ifndef _WIN32
+    if (sce_flags & SCE_NET_MSG_DONTWAIT)
+        posix_flags |= MSG_DONTWAIT;
+#endif
+    if (sce_flags & SCE_NET_MSG_WAITALL)
+        posix_flags |= MSG_WAITALL;
+
+    return posix_flags;
+}
+
 int PosixSocket::recv_packet(void *buf, unsigned int len, int flags, SceNetSockaddr *from, unsigned int *fromlen) {
+    const auto posix_flags = convertSceFlagsToPosix(flags);
     if (from == nullptr) {
-        return translate_return_value(recv(sock, (char *)buf, len, 0));
+        return translate_return_value(recv(sock, (char *)buf, len, posix_flags));
     }
 
     sockaddr addr;
-    int res = recvfrom(sock, (char *)buf, len, 0, &addr, (socklen_t *)fromlen);
+    socklen_t addrlen = sizeof(addr);
+    int res = recvfrom(sock, (char *)buf, len, posix_flags, &addr, (fromlen && *fromlen <= sizeof(addr) ? (socklen_t *)fromlen : &addrlen));
     convertPosixSockaddrToSce(&addr, from);
 
     return translate_return_value(res);
 }
 
 int PosixSocket::send_packet(const void *msg, unsigned int len, int flags, const SceNetSockaddr *to, unsigned int tolen) {
+    const auto posix_flags = convertSceFlagsToPosix(flags);
     if (to == nullptr) {
-        return translate_return_value(send(sock, (const char *)msg, len, 0));
+        return translate_return_value(send(sock, (const char *)msg, len, posix_flags));
     }
 
     sockaddr addr;
     convertSceSockaddrToPosix(to, &addr);
-    return translate_return_value(sendto(sock, (const char *)msg, len, 0, &addr, sizeof(sockaddr_in)));
+    return translate_return_value(sendto(sock, (const char *)msg, len, posix_flags, &addr, sizeof(sockaddr_in)));
 }

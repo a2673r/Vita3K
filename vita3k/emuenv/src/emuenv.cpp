@@ -17,6 +17,7 @@
 
 #include <emuenv/state.h>
 
+#include <adhoc/state.h>
 #include <audio/state.h>
 #include <config/state.h>
 #include <ctrl/state.h>
@@ -89,7 +90,9 @@ EmuEnvState::EmuEnvState()
     , _gdb(new GDBState)
     , gdb(*_gdb)
     , _http(new HTTPState)
-    , http(*_http) {
+    , http(*_http)
+    , _adhoc(new AdhocState)
+    , adhoc(*_adhoc) {
 }
 DISABLE_WARNING_END;
 
