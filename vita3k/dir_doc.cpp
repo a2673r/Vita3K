@@ -1,7 +1,7 @@
 /**
  * @file vita3k/dir_doc.cpp
  *
- * @brief Folder structure description
+ * @brief Folder structure description 
  *
  * This `.cpp` file contains descriptions for the `vita3k` source code folder and its sub-folders.
  */
